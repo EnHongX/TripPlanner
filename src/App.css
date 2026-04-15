@@ -1,0 +1,377 @@
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* 主应用容器 */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶部导航栏 */
+.header {
+  background-color: #1976d2;
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.trip-dates {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+/* 主内容区域 */
+.main-content {
+  flex: 1;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* 左侧边栏 - 日期选择 */
+.sidebar {
+  width: 250px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #1976d2;
+}
+
+.day-list {
+  margin-bottom: 1.5rem;
+}
+
+.day-item {
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.day-item:hover {
+  background-color: #f0f7ff;
+  border-color: #1976d2;
+}
+
+.day-item.active {
+  background-color: #e3f2fd;
+  border-color: #1976d2;
+  font-weight: 500;
+}
+
+.day-date {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.activity-count {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.day-budget {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #1976d2;
+  margin-top: 0.25rem;
+}
+
+.add-day-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #f5f5f5;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.add-day-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* 中间内容区域 - 行程详情 */
+.content {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.day-header h2 {
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.day-date-full {
+  font-size: 1rem;
+  color: #666;
+}
+
+.activities-list h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.no-activities {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
+.activity-card {
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.activity-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-time {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1976d2;
+  margin-bottom: 0.5rem;
+}
+
+.activity-info h4 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+  color: #333;
+}
+
+.activity-info p {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.activity-location {
+  font-size: 0.85rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+}
+
+.activity-location::before {
+  content: '📍';
+  margin-right: 0.25rem;
+}
+
+.activity-budget {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  margin-top: 0.5rem;
+  text-align: right;
+}
+
+.add-activity-btn {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.add-activity-btn:hover {
+  background-color: #1565c0;
+}
+
+/* 右侧边栏 - 预算汇总 */
+.budget-sidebar {
+  width: 250px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.budget-sidebar h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #1976d2;
+}
+
+.budget-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.budget-item:last-child {
+  border-bottom: none;
+  font-weight: 500;
+}
+
+.budget-amount {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* 添加活动表单样式 */
+.add-activity-form {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.add-activity-form h3 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.save-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.save-btn:hover {
+  background-color: #1565c0;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .sidebar,
+  .budget-sidebar {
+    width: 100%;
+  }
+
+  .content {
+    order: -1;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+}
