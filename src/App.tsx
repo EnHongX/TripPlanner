@@ -3162,79 +3162,15 @@ function App() {
   const renderProjectsPage = () => (
     <div className="projects-main">
       <div className="projects-page-header">
-        <h2>我的旅行项目</h2>
-        <p className="projects-subtitle">管理您的所有旅行计划</p>
-        {!showAddProjectForm && (
-          <button className="add-project-btn" onClick={() => setShowAddProjectForm(true)}>
-            + 创建新项目
-          </button>
-        )}
-      </div>
-
-      {showAddProjectForm && (
-        <div className="add-project-form-container">
-          <div className="add-project-form">
-            <h3>创建新旅行项目</h3>
-            <div className="form-group">
-              <label>项目名称 *</label>
-              <input
-                type="text"
-                value={newProject.name}
-                onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                placeholder="例如：东京五日游"
-                autoFocus
-              />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>开始日期 *</label>
-                <input
-                  type="date"
-                  value={newProject.startDate}
-                  onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label>结束日期 *</label>
-                <input
-                  type="date"
-                  value={newProject.endDate}
-                  onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>总预算</label>
-              <input
-                type="text"
-                value={newProject.totalBudget.toString()}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value) || 0;
-                  setNewProject({ ...newProject, totalBudget: value });
-                }}
-                placeholder="请输入预算金额"
-              />
-            </div>
-            <div className="form-actions">
-              <button
-                className="cancel-btn"
-                onClick={() => {
-                  setShowAddProjectForm(false);
-                  setNewProject({
-                    name: '',
-                    startDate: '',
-                    endDate: '',
-                    totalBudget: 0
-                  });
-                }}
-              >
-                取消
-              </button>
-              <button className="save-btn" onClick={handleAddProject}>创建项目</button>
-            </div>
-          </div>
+        <div className="projects-header-left">
+          <h2>我的旅行项目</h2>
+          <p className="projects-subtitle">管理您的所有旅行计划</p>
         </div>
-      )}
+        <button className="add-project-btn" onClick={() => setShowAddProjectForm(true)}>
+          <span className="add-project-icon">+</span>
+          创建新项目
+        </button>
+      </div>
 
       {projects.length === 0 ? (
         <div className="no-projects">
@@ -3299,6 +3235,73 @@ function App() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {showAddProjectForm && (
+        <div className="modal-overlay" onClick={() => setShowAddProjectForm(false)}>
+          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <h3>创建新旅行项目</h3>
+            <div className="form-group">
+              <label>项目名称 *</label>
+              <input
+                type="text"
+                value={newProject.name}
+                onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                placeholder="例如：东京五日游"
+                autoFocus
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>开始日期 *</label>
+                <input
+                  type="date"
+                  value={newProject.startDate}
+                  onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>结束日期 *</label>
+                <input
+                  type="date"
+                  value={newProject.endDate}
+                  onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>总预算</label>
+              <input
+                type="text"
+                value={newProject.totalBudget.toString()}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  setNewProject({ ...newProject, totalBudget: value });
+                }}
+                placeholder="请输入预算金额"
+              />
+            </div>
+            <div className="modal-actions">
+              <button
+                className="cancel-btn"
+                onClick={() => {
+                  setShowAddProjectForm(false);
+                  setNewProject({
+                    name: '',
+                    startDate: '',
+                    endDate: '',
+                    totalBudget: 0
+                  });
+                }}
+              >
+                取消
+              </button>
+              <button className="save-btn" onClick={handleAddProject}>
+                创建项目
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
