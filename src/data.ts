@@ -1,4 +1,4 @@
-import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate } from './types';
+import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate, TravelInfo, Transportation, Accommodation } from './types';
 
 export const packingCategories: PackingCategory[] = [
   { id: 'documents', name: '证件', icon: '📄' },
@@ -246,3 +246,77 @@ export const packingTemplates: PackingTemplate[] = [
     ]
   }
 ];
+
+export const mockAccommodations: Accommodation[] = [
+  {
+    id: 'acc1',
+    name: '新宿王子酒店',
+    address: '日本东京都新宿区西新宿1-1-1',
+    checkInDate: '2024-05-01',
+    checkOutDate: '2024-05-03',
+    roomType: '标准双人间',
+    price: 16000,
+    bookingNumber: 'ACC20240501001',
+    notes: '含早餐，免费WiFi，靠近新宿站'
+  },
+  {
+    id: 'acc2',
+    name: '浅草微笑酒店',
+    address: '日本东京都台东区浅草1-2-3',
+    checkInDate: '2024-05-03',
+    checkOutDate: '2024-05-05',
+    roomType: '豪华大床房',
+    price: 20000,
+    bookingNumber: 'ACC20240503002',
+    notes: '靠近浅草寺，可观赏晴空塔'
+  }
+];
+
+export const mockTransportations: Transportation[] = [
+  {
+    id: 'trans1',
+    type: 'flight',
+    number: 'MU271',
+    fromLocation: '上海浦东机场(PVG)',
+    toLocation: '东京成田机场(NRT)',
+    departureTime: '2024-05-01 08:30',
+    arrivalTime: '2024-05-01 12:30',
+    price: 3500,
+    seatNumber: '12A',
+    bookingNumber: 'FL20240501001',
+    notes: '东方航空，含20kg托运行李'
+  },
+  {
+    id: 'trans2',
+    type: 'train',
+    number: 'N'EX成田特快',
+    fromLocation: '成田机场',
+    toLocation: '新宿站',
+    departureTime: '2024-05-01 13:00',
+    arrivalTime: '2024-05-01 14:30',
+    price: 300,
+    seatNumber: '自由席',
+    bookingNumber: 'TR20240501001',
+    notes: 'JR东日本，可使用Suica卡'
+  },
+  {
+    id: 'trans3',
+    type: 'flight',
+    number: 'MU272',
+    fromLocation: '东京成田机场(NRT)',
+    toLocation: '上海浦东机场(PVG)',
+    departureTime: '2024-05-05 14:00',
+    arrivalTime: '2024-05-05 16:00',
+    price: 3200,
+    seatNumber: '15B',
+    bookingNumber: 'FL20240505001',
+    notes: '东方航空，含20kg托运行李'
+  }
+];
+
+export const mockTravelInfo: TravelInfo = {
+  id: '1',
+  tripId: '1',
+  accommodations: mockAccommodations,
+  transportations: mockTransportations
+};

@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import './App.css';
-import { mockPackingList, mockTripPlan, packingTemplates } from './data';
-import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem } from './types';
+import { mockPackingList, mockTripPlan, packingTemplates, mockTravelInfo } from './data';
+import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType } from './types';
 
-type PageType = 'itinerary' | 'packing' | 'templates';
+type PageType = 'itinerary' | 'packing' | 'templates' | 'travel';
 
 const initialTripPlan: TripPlan = mockTripPlan;
 const initialPackingList: PackingList = mockPackingList;
 const initialTemplates: PackingTemplate[] = JSON.parse(JSON.stringify(packingTemplates));
+const initialTravelInfo: TravelInfo = JSON.parse(JSON.stringify(mockTravelInfo));
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('itinerary');
@@ -63,6 +64,64 @@ function App() {
   const [newTemplateItemCategoryId, setNewTemplateItemCategoryId] = useState('');
   const [editingCategory, setEditingCategory] = useState<{ templateId: string; category: TemplateCategory } | null>(null);
   const [editingItem, setEditingItem] = useState<{ templateId: string; item: TemplateItem } | null>(null);
+
+  const [travelInfo, setTravelInfo] = useState<TravelInfo>(initialTravelInfo);
+  const [showAddAccommodationForm, setShowAddAccommodationForm] = useState(false);
+  const [showAddTransportationForm, setShowAddTransportationForm] = useState(false);
+  const [showEditAccommodationForm, setShowEditAccommodationForm] = useState(false);
+  const [showEditTransportationForm, setShowEditTransportationForm] = useState(false);
+  const [showDeleteAccommodationConfirm, setShowDeleteAccommodationConfirm] = useState<string | null>(null);
+  const [showDeleteTransportationConfirm, setShowDeleteTransportationConfirm] = useState<string | null>(null);
+
+  const [newAccommodation, setNewAccommodation] = useState<Omit<Accommodation, 'id'>>({
+    name: '',
+    address: '',
+    checkInDate: '',
+    checkOutDate: '',
+    roomType: '',
+    price: 0,
+    bookingNumber: '',
+    notes: ''
+  });
+
+  const [newTransportation, setNewTransportation] = useState<Omit<Transportation, 'id'>>({
+    type: 'flight',
+    number: '',
+    fromLocation: '',
+    toLocation: '',
+    departureTime: '',
+    arrivalTime: '',
+    price: 0,
+    seatNumber: '',
+    bookingNumber: '',
+    notes: ''
+  });
+
+  const [editingAccommodation, setEditingAccommodation] = useState<Accommodation>({
+    id: '',
+    name: '',
+    address: '',
+    checkInDate: '',
+    checkOutDate: '',
+    roomType: '',
+    price: 0,
+    bookingNumber: '',
+    notes: ''
+  });
+
+  const [editingTransportation, setEditingTransportation] = useState<Transportation>({
+    id: '',
+    type: 'flight',
+    number: '',
+    fromLocation: '',
+    toLocation: '',
+    departureTime: '',
+    arrivalTime: '',
+    price: 0,
+    seatNumber: '',
+    bookingNumber: '',
+    notes: ''
+  });
 
   const checkTimeConflict = (startTime: string, endTime: string, excludeActivityId?: string): boolean => {
     const newStart = new Date(`2000-01-01 ${startTime}`);
@@ -525,8 +584,800 @@ function App() {
     alert(`模板 "${template.name}" 已应用到当前物品清单！`);
   };
 
+  const handleAddAccommodation = () => {
+    if (!newAccommodation.name.trim() || !newAccommodation.checkInDate || !newAccommodation.checkOutDate) {
+      alert('请填写酒店名称、入住和退房日期');
+      return;
+    }
+
+    const accommodation: Accommodation = {
+      ...newAccommodation,
+      id: `acc${Date.now()}`
+    };
+
+    setTravelInfo({
+      ...travelInfo,
+      accommodations: [...travelInfo.accommodations, accommodation]
+    });
+
+    setNewAccommodation({
+      name: '',
+      address: '',
+      checkInDate: '',
+      checkOutDate: '',
+      roomType: '',
+      price: 0,
+      bookingNumber: '',
+      notes: ''
+    });
+    setShowAddAccommodationForm(false);
+  };
+
+  const handleEditAccommodation = (accommodation: Accommodation) => {
+    setEditingAccommodation({ ...accommodation });
+    setShowEditAccommodationForm(true);
+  };
+
+  const handleSaveEditAccommodation = () => {
+    if (!editingAccommodation.name.trim() || !editingAccommodation.checkInDate || !editingAccommodation.checkOutDate) {
+      alert('请填写酒店名称、入住和退房日期');
+      return;
+    }
+
+    const updatedAccommodations = travelInfo.accommodations.map(acc =>
+      acc.id === editingAccommodation.id ? editingAccommodation : acc
+    );
+
+    setTravelInfo({
+      ...travelInfo,
+      accommodations: updatedAccommodations
+    });
+    setShowEditAccommodationForm(false);
+  };
+
+  const handleDeleteAccommodation = (id: string) => {
+    setTravelInfo({
+      ...travelInfo,
+      accommodations: travelInfo.accommodations.filter(acc => acc.id !== id)
+    });
+    setShowDeleteAccommodationConfirm(null);
+  };
+
+  const handleAddTransportation = () => {
+    if (!newTransportation.number.trim() || !newTransportation.departureTime) {
+      alert('请填写班次号和出发时间');
+      return;
+    }
+
+    const transportation: Transportation = {
+      ...newTransportation,
+      id: `trans${Date.now()}`
+    };
+
+    setTravelInfo({
+      ...travelInfo,
+      transportations: [...travelInfo.transportations, transportation]
+    });
+
+    setNewTransportation({
+      type: 'flight',
+      number: '',
+      fromLocation: '',
+      toLocation: '',
+      departureTime: '',
+      arrivalTime: '',
+      price: 0,
+      seatNumber: '',
+      bookingNumber: '',
+      notes: ''
+    });
+    setShowAddTransportationForm(false);
+  };
+
+  const handleEditTransportation = (transportation: Transportation) => {
+    setEditingTransportation({ ...transportation });
+    setShowEditTransportationForm(true);
+  };
+
+  const handleSaveEditTransportation = () => {
+    if (!editingTransportation.number.trim() || !editingTransportation.departureTime) {
+      alert('请填写班次号和出发时间');
+      return;
+    }
+
+    const updatedTransportations = travelInfo.transportations.map(trans =>
+      trans.id === editingTransportation.id ? editingTransportation : trans
+    );
+
+    setTravelInfo({
+      ...travelInfo,
+      transportations: updatedTransportations
+    });
+    setShowEditTransportationForm(false);
+  };
+
+  const handleDeleteTransportation = (id: string) => {
+    setTravelInfo({
+      ...travelInfo,
+      transportations: travelInfo.transportations.filter(trans => trans.id !== id)
+    });
+    setShowDeleteTransportationConfirm(null);
+  };
+
+  const getTravelTypeIcon = (type: TravelType): string => {
+    switch (type) {
+      case 'flight': return '✈️';
+      case 'train': return '🚄';
+      case 'bus': return '🚌';
+      case 'taxi': return '🚕';
+      default: return '🚗';
+    }
+  };
+
+  const getTravelTypeName = (type: TravelType): string => {
+    switch (type) {
+      case 'flight': return '航班';
+      case 'train': return '火车';
+      case 'bus': return '大巴';
+      case 'taxi': return '出租车';
+      default: return '其他';
+    }
+  };
+
+  const calculateTotalAccommodationBudget = (): number => {
+    return travelInfo.accommodations.reduce((sum, acc) => sum + acc.price, 0);
+  };
+
+  const calculateTotalTransportationBudget = (): number => {
+    return travelInfo.transportations.reduce((sum, trans) => sum + trans.price, 0);
+  };
+
   const totalBudget = calculateTotalBudget();
   const dayBudget = calculateDayBudget();
+
+  const renderTravelPage = () => (
+    <div className="main-content">
+      <aside className="sidebar">
+        <h2>信息分类</h2>
+        <div className="category-list">
+          <div className="category-item">
+            <div className="category-item-content">
+              <span className="category-icon">🏨</span>
+              <span className="category-name">住宿信息</span>
+              <span className="category-count">{travelInfo.accommodations.length}</span>
+            </div>
+          </div>
+          <div className="category-item">
+            <div className="category-item-content">
+              <span className="category-icon">✈️</span>
+              <span className="category-name">交通信息</span>
+              <span className="category-count">{travelInfo.transportations.length}</span>
+            </div>
+          </div>
+        </div>
+        <div className="sidebar-actions">
+          <button className="add-item-btn" onClick={() => setShowAddAccommodationForm(true)}>添加住宿</button>
+          <button className="add-item-btn" onClick={() => setShowAddTransportationForm(true)}>添加交通</button>
+        </div>
+      </aside>
+
+      <main className="content">
+        <div className="travel-header">
+          <h2>住宿与交通信息</h2>
+        </div>
+
+        <div className="travel-section">
+          <div className="section-header">
+            <h3>
+              <span className="category-icon">🏨</span>
+              住宿信息
+            </h3>
+            {!showAddAccommodationForm && !showEditAccommodationForm && (
+              <button 
+                className="add-btn-small" 
+                onClick={() => setShowAddAccommodationForm(true)}
+              >
+                + 添加住宿
+              </button>
+            )}
+          </div>
+
+          {travelInfo.accommodations.length === 0 ? (
+            <p className="no-items">暂无住宿信息，点击上方按钮添加</p>
+          ) : (
+            <div className="accommodation-list">
+              {travelInfo.accommodations.map((accommodation) => (
+                <div key={accommodation.id} className="accommodation-card">
+                  <div className="accommodation-header">
+                    <h4>{accommodation.name}</h4>
+                    <div className="accommodation-price">¥{accommodation.price}</div>
+                  </div>
+                  <div className="accommodation-address">
+                    <span>📍 {accommodation.address}</span>
+                  </div>
+                  <div className="accommodation-dates">
+                    <span className="date-label">入住:</span>
+                    <span className="date-value">{accommodation.checkInDate}</span>
+                    <span className="date-separator">→</span>
+                    <span className="date-label">退房:</span>
+                    <span className="date-value">{accommodation.checkOutDate}</span>
+                  </div>
+                  {accommodation.roomType && (
+                    <div className="accommodation-room">
+                      <span>🛏️ 房型: {accommodation.roomType}</span>
+                    </div>
+                  )}
+                  {accommodation.bookingNumber && (
+                    <div className="accommodation-booking">
+                      <span>📋 预订号: {accommodation.bookingNumber}</span>
+                    </div>
+                  )}
+                  {accommodation.notes && (
+                    <div className="accommodation-notes">
+                      <span>📝 {accommodation.notes}</span>
+                    </div>
+                  )}
+                  <div className="accommodation-actions">
+                    <button 
+                      className="edit-btn" 
+                      onClick={() => handleEditAccommodation(accommodation)}
+                    >
+                      编辑
+                    </button>
+                    <button 
+                      className="delete-btn" 
+                      onClick={() => setShowDeleteAccommodationConfirm(accommodation.id)}
+                    >
+                      删除
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="travel-section">
+          <div className="section-header">
+            <h3>
+              <span className="category-icon">✈️</span>
+              交通信息
+            </h3>
+            {!showAddTransportationForm && !showEditTransportationForm && (
+              <button 
+                className="add-btn-small" 
+                onClick={() => setShowAddTransportationForm(true)}
+              >
+                + 添加交通
+              </button>
+            )}
+          </div>
+
+          {travelInfo.transportations.length === 0 ? (
+            <p className="no-items">暂无交通信息，点击上方按钮添加</p>
+          ) : (
+            <div className="transportation-list">
+              {travelInfo.transportations.map((transportation) => (
+                <div key={transportation.id} className="transportation-card">
+                  <div className="transportation-header">
+                    <div className="transportation-type">
+                      <span className="category-icon">{getTravelTypeIcon(transportation.type)}</span>
+                      <span className="type-name">{getTravelTypeName(transportation.type)}</span>
+                    </div>
+                    <div className="transportation-number">{transportation.number}</div>
+                    <div className="transportation-price">¥{transportation.price}</div>
+                  </div>
+                  <div className="transportation-route">
+                    <div className="route-from">
+                      <div className="location">{transportation.fromLocation}</div>
+                      <div className="time">{transportation.departureTime}</div>
+                    </div>
+                    <div className="route-arrow">→</div>
+                    <div className="route-to">
+                      <div className="location">{transportation.toLocation}</div>
+                      <div className="time">{transportation.arrivalTime}</div>
+                    </div>
+                  </div>
+                  {transportation.seatNumber && (
+                    <div className="transportation-seat">
+                      <span>💺 座位: {transportation.seatNumber}</span>
+                    </div>
+                  )}
+                  {transportation.bookingNumber && (
+                    <div className="transportation-booking">
+                      <span>📋 预订号: {transportation.bookingNumber}</span>
+                    </div>
+                  )}
+                  {transportation.notes && (
+                    <div className="transportation-notes">
+                      <span>📝 {transportation.notes}</span>
+                    </div>
+                  )}
+                  <div className="transportation-actions">
+                    <button 
+                      className="edit-btn" 
+                      onClick={() => handleEditTransportation(transportation)}
+                    >
+                      编辑
+                    </button>
+                    <button 
+                      className="delete-btn" 
+                      onClick={() => setShowDeleteTransportationConfirm(transportation.id)}
+                    >
+                      删除
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {showAddAccommodationForm && (
+          <div className="add-form-container">
+            <div className="add-activity-form">
+              <h3>添加住宿信息</h3>
+              <div className="form-group">
+                <label>酒店名称 *</label>
+                <input
+                  type="text"
+                  value={newAccommodation.name}
+                  onChange={(e) => setNewAccommodation({ ...newAccommodation, name: e.target.value })}
+                  placeholder="请输入酒店名称"
+                />
+              </div>
+              <div className="form-group">
+                <label>地址</label>
+                <input
+                  type="text"
+                  value={newAccommodation.address}
+                  onChange={(e) => setNewAccommodation({ ...newAccommodation, address: e.target.value })}
+                  placeholder="请输入酒店地址"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>入住日期 *</label>
+                  <input
+                    type="date"
+                    value={newAccommodation.checkInDate}
+                    onChange={(e) => setNewAccommodation({ ...newAccommodation, checkInDate: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>退房日期 *</label>
+                  <input
+                    type="date"
+                    value={newAccommodation.checkOutDate}
+                    onChange={(e) => setNewAccommodation({ ...newAccommodation, checkOutDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>房型</label>
+                  <input
+                    type="text"
+                    value={newAccommodation.roomType}
+                    onChange={(e) => setNewAccommodation({ ...newAccommodation, roomType: e.target.value })}
+                    placeholder="如：标准双人间"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>价格</label>
+                  <input
+                    type="text"
+                    value={newAccommodation.price.toString()}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setNewAccommodation({ ...newAccommodation, price: value });
+                    }}
+                    placeholder="请输入价格"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>预订号</label>
+                <input
+                  type="text"
+                  value={newAccommodation.bookingNumber}
+                  onChange={(e) => setNewAccommodation({ ...newAccommodation, bookingNumber: e.target.value })}
+                  placeholder="请输入预订号"
+                />
+              </div>
+              <div className="form-group">
+                <label>备注</label>
+                <textarea
+                  value={newAccommodation.notes}
+                  onChange={(e) => setNewAccommodation({ ...newAccommodation, notes: e.target.value })}
+                  placeholder="输入备注信息"
+                />
+              </div>
+              <div className="form-actions">
+                <button 
+                  className="cancel-btn" 
+                  onClick={() => {
+                    setShowAddAccommodationForm(false);
+                    setNewAccommodation({
+                      name: '',
+                      address: '',
+                      checkInDate: '',
+                      checkOutDate: '',
+                      roomType: '',
+                      price: 0,
+                      bookingNumber: '',
+                      notes: ''
+                    });
+                  }}
+                >
+                  取消
+                </button>
+                <button className="save-btn" onClick={handleAddAccommodation}>保存</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEditAccommodationForm && (
+          <div className="add-form-container">
+            <div className="edit-activity-form">
+              <h3>编辑住宿信息</h3>
+              <div className="form-group">
+                <label>酒店名称 *</label>
+                <input
+                  type="text"
+                  value={editingAccommodation.name}
+                  onChange={(e) => setEditingAccommodation({ ...editingAccommodation, name: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>地址</label>
+                <input
+                  type="text"
+                  value={editingAccommodation.address}
+                  onChange={(e) => setEditingAccommodation({ ...editingAccommodation, address: e.target.value })}
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>入住日期 *</label>
+                  <input
+                    type="date"
+                    value={editingAccommodation.checkInDate}
+                    onChange={(e) => setEditingAccommodation({ ...editingAccommodation, checkInDate: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>退房日期 *</label>
+                  <input
+                    type="date"
+                    value={editingAccommodation.checkOutDate}
+                    onChange={(e) => setEditingAccommodation({ ...editingAccommodation, checkOutDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>房型</label>
+                  <input
+                    type="text"
+                    value={editingAccommodation.roomType}
+                    onChange={(e) => setEditingAccommodation({ ...editingAccommodation, roomType: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>价格</label>
+                  <input
+                    type="text"
+                    value={editingAccommodation.price.toString()}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setEditingAccommodation({ ...editingAccommodation, price: value });
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>预订号</label>
+                <input
+                  type="text"
+                  value={editingAccommodation.bookingNumber}
+                  onChange={(e) => setEditingAccommodation({ ...editingAccommodation, bookingNumber: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>备注</label>
+                <textarea
+                  value={editingAccommodation.notes}
+                  onChange={(e) => setEditingAccommodation({ ...editingAccommodation, notes: e.target.value })}
+                />
+              </div>
+              <div className="form-actions">
+                <button 
+                  className="cancel-btn" 
+                  onClick={() => setShowEditAccommodationForm(false)}
+                >
+                  取消
+                </button>
+                <button className="save-btn" onClick={handleSaveEditAccommodation}>保存</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showAddTransportationForm && (
+          <div className="add-form-container">
+            <div className="add-activity-form">
+              <h3>添加交通信息</h3>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>交通类型</label>
+                  <select
+                    value={newTransportation.type}
+                    onChange={(e) => setNewTransportation({ ...newTransportation, type: e.target.value as TravelType })}
+                  >
+                    <option value="flight">✈️ 航班</option>
+                    <option value="train">🚄 火车</option>
+                    <option value="bus">🚌 大巴</option>
+                    <option value="taxi">🚕 出租车</option>
+                    <option value="other">🚗 其他</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>班次号 *</label>
+                  <input
+                    type="text"
+                    value={newTransportation.number}
+                    onChange={(e) => setNewTransportation({ ...newTransportation, number: e.target.value })}
+                    placeholder="如：MU271"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>出发地</label>
+                  <input
+                    type="text"
+                    value={newTransportation.fromLocation}
+                    onChange={(e) => setNewTransportation({ ...newTransportation, fromLocation: e.target.value })}
+                    placeholder="如：上海浦东机场"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>目的地</label>
+                  <input
+                    type="text"
+                    value={newTransportation.toLocation}
+                    onChange={(e) => setNewTransportation({ ...newTransportation, toLocation: e.target.value })}
+                    placeholder="如：东京成田机场"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>出发时间 *</label>
+                  <input
+                    type="datetime-local"
+                    value={newTransportation.departureTime}
+                    onChange={(e) => setNewTransportation({ ...newTransportation, departureTime: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>到达时间</label>
+                  <input
+                    type="datetime-local"
+                    value={newTransportation.arrivalTime}
+                    onChange={(e) => setNewTransportation({ ...newTransportation, arrivalTime: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>座位号</label>
+                  <input
+                    type="text"
+                    value={newTransportation.seatNumber}
+                    onChange={(e) => setNewTransportation({ ...newTransportation, seatNumber: e.target.value })}
+                    placeholder="如：12A"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>价格</label>
+                  <input
+                    type="text"
+                    value={newTransportation.price.toString()}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setNewTransportation({ ...newTransportation, price: value });
+                    }}
+                    placeholder="请输入价格"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>预订号</label>
+                <input
+                  type="text"
+                  value={newTransportation.bookingNumber}
+                  onChange={(e) => setNewTransportation({ ...newTransportation, bookingNumber: e.target.value })}
+                  placeholder="请输入预订号"
+                />
+              </div>
+              <div className="form-group">
+                <label>备注</label>
+                <textarea
+                  value={newTransportation.notes}
+                  onChange={(e) => setNewTransportation({ ...newTransportation, notes: e.target.value })}
+                  placeholder="输入备注信息"
+                />
+              </div>
+              <div className="form-actions">
+                <button 
+                  className="cancel-btn" 
+                  onClick={() => {
+                    setShowAddTransportationForm(false);
+                    setNewTransportation({
+                      type: 'flight',
+                      number: '',
+                      fromLocation: '',
+                      toLocation: '',
+                      departureTime: '',
+                      arrivalTime: '',
+                      price: 0,
+                      seatNumber: '',
+                      bookingNumber: '',
+                      notes: ''
+                    });
+                  }}
+                >
+                  取消
+                </button>
+                <button className="save-btn" onClick={handleAddTransportation}>保存</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEditTransportationForm && (
+          <div className="add-form-container">
+            <div className="edit-activity-form">
+              <h3>编辑交通信息</h3>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>交通类型</label>
+                  <select
+                    value={editingTransportation.type}
+                    onChange={(e) => setEditingTransportation({ ...editingTransportation, type: e.target.value as TravelType })}
+                  >
+                    <option value="flight">✈️ 航班</option>
+                    <option value="train">🚄 火车</option>
+                    <option value="bus">🚌 大巴</option>
+                    <option value="taxi">🚕 出租车</option>
+                    <option value="other">🚗 其他</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>班次号 *</label>
+                  <input
+                    type="text"
+                    value={editingTransportation.number}
+                    onChange={(e) => setEditingTransportation({ ...editingTransportation, number: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>出发地</label>
+                  <input
+                    type="text"
+                    value={editingTransportation.fromLocation}
+                    onChange={(e) => setEditingTransportation({ ...editingTransportation, fromLocation: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>目的地</label>
+                  <input
+                    type="text"
+                    value={editingTransportation.toLocation}
+                    onChange={(e) => setEditingTransportation({ ...editingTransportation, toLocation: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>出发时间 *</label>
+                  <input
+                    type="datetime-local"
+                    value={editingTransportation.departureTime}
+                    onChange={(e) => setEditingTransportation({ ...editingTransportation, departureTime: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>到达时间</label>
+                  <input
+                    type="datetime-local"
+                    value={editingTransportation.arrivalTime}
+                    onChange={(e) => setEditingTransportation({ ...editingTransportation, arrivalTime: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>座位号</label>
+                  <input
+                    type="text"
+                    value={editingTransportation.seatNumber}
+                    onChange={(e) => setEditingTransportation({ ...editingTransportation, seatNumber: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>价格</label>
+                  <input
+                    type="text"
+                    value={editingTransportation.price.toString()}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setEditingTransportation({ ...editingTransportation, price: value });
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>预订号</label>
+                <input
+                  type="text"
+                  value={editingTransportation.bookingNumber}
+                  onChange={(e) => setEditingTransportation({ ...editingTransportation, bookingNumber: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>备注</label>
+                <textarea
+                  value={editingTransportation.notes}
+                  onChange={(e) => setEditingTransportation({ ...editingTransportation, notes: e.target.value })}
+                />
+              </div>
+              <div className="form-actions">
+                <button 
+                  className="cancel-btn" 
+                  onClick={() => setShowEditTransportationForm(false)}
+                >
+                  取消
+                </button>
+                <button className="save-btn" onClick={handleSaveEditTransportation}>保存</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <aside className="budget-sidebar">
+        <h2>信息统计</h2>
+        <div className="stat-item">
+          <span>🏨 住宿数量</span>
+          <span className="stat-value">{travelInfo.accommodations.length}</span>
+        </div>
+        <div className="stat-item">
+          <span>✈️ 交通数量</span>
+          <span className="stat-value">{travelInfo.transportations.length}</span>
+        </div>
+        <div className="stat-item">
+          <span>住宿总费用</span>
+          <span className="stat-value">¥{calculateTotalAccommodationBudget()}</span>
+        </div>
+        <div className="stat-item">
+          <span>交通总费用</span>
+          <span className="stat-value">¥{calculateTotalTransportationBudget()}</span>
+        </div>
+        <div className="stat-item">
+          <span><strong>住宿+交通合计</strong></span>
+          <span className="stat-value">
+            ¥{calculateTotalAccommodationBudget() + calculateTotalTransportationBudget()}
+          </span>
+        </div>
+      </aside>
+    </div>
+  );
 
   const renderItineraryPage = () => (
     <div className="main-content">
@@ -1163,6 +2014,12 @@ function App() {
           >
             清单模板
           </button>
+          <button
+            className={`nav-btn ${currentPage === 'travel' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('travel')}
+          >
+            住宿交通
+          </button>
         </div>
         <div className="trip-dates">
           <span>{tripPlan.startDate}</span> - <span>{tripPlan.endDate}</span>
@@ -1173,7 +2030,9 @@ function App() {
         ? renderItineraryPage()
         : currentPage === 'packing'
         ? renderPackingPage()
-        : renderTemplatesPage()}
+        : currentPage === 'templates'
+        ? renderTemplatesPage()
+        : renderTravelPage()}
 
       {showDeleteDayConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteDayConfirm(false)}>
@@ -1446,6 +2305,32 @@ function App() {
             <div className="modal-actions">
               <button className="cancel-btn" onClick={() => setShowApplyTemplateConfirm(null)}>取消</button>
               <button className="save-btn" onClick={() => handleApplyTemplate(showApplyTemplateConfirm!)}>确认应用</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteAccommodationConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteAccommodationConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这条住宿信息吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteAccommodationConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteAccommodation(showDeleteAccommodationConfirm!)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteTransportationConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteTransportationConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这条交通信息吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteTransportationConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteTransportation(showDeleteTransportationConfirm!)}>确认删除</button>
             </div>
           </div>
         </div>
