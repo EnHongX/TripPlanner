@@ -29,7 +29,7 @@ export const mockPackingItems: PackingItem[] = [
 export const mockPackingList: PackingList = {
   id: '1',
   tripId: '1',
-  items: mockPackingItems
+  items: []
 };
 
 export const mockTripPlan: TripPlan = {
