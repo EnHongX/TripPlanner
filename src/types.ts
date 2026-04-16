@@ -142,3 +142,17 @@ export interface ReviewList {
   reviews: DayReview[];
   photoNotes: PhotoNote[];
 }
+
+export interface TripProject {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  totalBudget: number;
+  createdAt: string;
+  tripPlan: TripPlan;
+  packingList: PackingList;
+  travelInfo: TravelInfo;
+  reminderList: ReminderList;
+  reviewList: ReviewList;
+}

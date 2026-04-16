@@ -1,22 +1,21 @@
 import { useState } from 'react';
 import './App.css';
-import { mockPackingList, mockTripPlan, packingTemplates, mockTravelInfo, mockReminderList, mockReviewList } from './data';
-import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType, Reminder, ReminderList, ReminderType, ReviewList, DayReview, PhotoNote } from './types';
+import { mockPackingList, mockTripPlan, packingTemplates, mockTravelInfo, mockReminderList, mockReviewList, mockTripProjects, packingCategories } from './data';
+import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType, Reminder, ReminderList, ReminderType, ReviewList, DayReview, PhotoNote, TripProject } from './types';
 
-type PageType = 'itinerary' | 'packing' | 'templates' | 'travel' | 'reminders' | 'reviews';
+type PageType = 'projects' | 'itinerary' | 'packing' | 'templates' | 'travel' | 'reminders' | 'reviews';
 
-const initialTripPlan: TripPlan = mockTripPlan;
-const initialPackingList: PackingList = mockPackingList;
 const initialTemplates: PackingTemplate[] = JSON.parse(JSON.stringify(packingTemplates));
-const initialTravelInfo: TravelInfo = JSON.parse(JSON.stringify(mockTravelInfo));
-const initialReminderList: ReminderList = JSON.parse(JSON.stringify(mockReminderList));
-const initialReviewList: ReviewList = JSON.parse(JSON.stringify(mockReviewList));
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<PageType>('itinerary');
-  const [tripPlan, setTripPlan] = useState<TripPlan>(initialTripPlan);
-  const [selectedDay, setSelectedDay] = useState<DayPlan>(initialTripPlan.days[0]);
-  const [packingList, setPackingList] = useState<PackingList>(initialPackingList);
+  const [projects, setProjects] = useState<TripProject[]>(JSON.parse(JSON.stringify(mockTripProjects)));
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<PageType>('projects');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  
+  const [tripPlan, setTripPlan] = useState<TripPlan>(mockTripPlan);
+  const [selectedDay, setSelectedDay] = useState<DayPlan>(mockTripPlan.days[0]);
+  const [packingList, setPackingList] = useState<PackingList>(mockPackingList);
   
   const [showAddActivityForm, setShowAddActivityForm] = useState(false);
   const [showEditActivityForm, setShowEditActivityForm] = useState(false);
@@ -24,7 +23,7 @@ function App() {
   const [showDeleteDayConfirm, setShowDeleteDayConfirm] = useState(false);
   const [showDeleteActivityConfirm, setShowDeleteActivityConfirm] = useState<string | null>(null);
   const [isEditingBudget, setIsEditingBudget] = useState(false);
-  const [editedTotalBudget, setEditedTotalBudget] = useState<string>(initialTripPlan.totalBudget.toString());
+  const [editedTotalBudget, setEditedTotalBudget] = useState<string>('0');
   
   const [showDeleteItemConfirm, setShowDeleteItemConfirm] = useState<string | null>(null);
   const [showAddItemForm, setShowAddItemForm] = useState(false);
@@ -67,8 +66,8 @@ function App() {
   const [editingCategory, setEditingCategory] = useState<{ templateId: string; category: TemplateCategory } | null>(null);
   const [editingItem, setEditingItem] = useState<{ templateId: string; item: TemplateItem } | null>(null);
 
-  const [travelInfo, setTravelInfo] = useState<TravelInfo>(initialTravelInfo);
-  const [reminderList, setReminderList] = useState<ReminderList>(initialReminderList);
+  const [travelInfo, setTravelInfo] = useState<TravelInfo>(mockTravelInfo);
+  const [reminderList, setReminderList] = useState<ReminderList>(mockReminderList);
   
   const [showAddAccommodationForm, setShowAddAccommodationForm] = useState(false);
   const [showAddTransportationForm, setShowAddTransportationForm] = useState(false);
@@ -139,8 +138,8 @@ function App() {
     time: ''
   });
 
-  const [reviewList, setReviewList] = useState<ReviewList>(initialReviewList);
-  const [selectedReviewDate, setSelectedReviewDate] = useState<string>(tripPlan.days[0]?.date || '');
+  const [reviewList, setReviewList] = useState<ReviewList>(mockReviewList);
+  const [selectedReviewDate, setSelectedReviewDate] = useState<string>('');
   const [showAddReviewForm, setShowAddReviewForm] = useState(false);
   const [showEditReviewForm, setShowEditReviewForm] = useState(false);
   const [showDeleteReviewConfirm, setShowDeleteReviewConfirm] = useState<string | null>(null);
@@ -179,6 +178,17 @@ function App() {
     createdAt: ''
   });
 
+  const [showAddProjectForm, setShowAddProjectForm] = useState(false);
+  const [showEditProjectForm, setShowEditProjectForm] = useState(false);
+  const [showDeleteProjectConfirm, setShowDeleteProjectConfirm] = useState<string | null>(null);
+  const [newProject, setNewProject] = useState<Omit<TripProject, 'id' | 'createdAt' | 'tripPlan' | 'packingList' | 'travelInfo' | 'reminderList' | 'reviewList'>>({
+    name: '',
+    startDate: '',
+    endDate: '',
+    totalBudget: 0
+  });
+  const [editingProject, setEditingProject] = useState<TripProject | null>(null);
+
   const moodOptions = [
     { value: '😊', label: '开心' },
     { value: '😄', label: '兴奋' },
@@ -195,6 +205,180 @@ function App() {
     { value: '❄️', label: '雪天' },
     { value: '🌤️', label: '晴转多云' }
   ];
+
+  const handleSwitchProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    setCurrentProjectId(projectId);
+    setTripPlan(JSON.parse(JSON.stringify(project.tripPlan)));
+    setPackingList(JSON.parse(JSON.stringify(project.packingList)));
+    setTravelInfo(JSON.parse(JSON.stringify(project.travelInfo)));
+    setReminderList(JSON.parse(JSON.stringify(project.reminderList)));
+    setReviewList(JSON.parse(JSON.stringify(project.reviewList)));
+    setSelectedDay(JSON.parse(JSON.stringify(project.tripPlan.days[0])));
+    setSelectedReviewDate(project.tripPlan.days[0]?.date || '');
+    setEditedTotalBudget(project.tripPlan.totalBudget.toString());
+    setCurrentPage('itinerary');
+  };
+
+  const handleBackToProjects = () => {
+    if (currentProjectId) {
+      const updatedProjects = projects.map(p => {
+        if (p.id === currentProjectId) {
+          return {
+            ...p,
+            tripPlan: JSON.parse(JSON.stringify(tripPlan)),
+            packingList: JSON.parse(JSON.stringify(packingList)),
+            travelInfo: JSON.parse(JSON.stringify(travelInfo)),
+            reminderList: JSON.parse(JSON.stringify(reminderList)),
+            reviewList: JSON.parse(JSON.stringify(reviewList))
+          };
+        }
+        return p;
+      });
+      setProjects(updatedProjects);
+    }
+    setCurrentProjectId(null);
+    setCurrentPage('projects');
+    setShowMoreMenu(false);
+  };
+
+  const handleAddProject = () => {
+    if (!newProject.name.trim() || !newProject.startDate || !newProject.endDate) {
+      alert('请填写项目名称、开始日期和结束日期');
+      return;
+    }
+
+    const startDate = new Date(newProject.startDate);
+    const endDate = new Date(newProject.endDate);
+    const days: DayPlan[] = [];
+    // eslint-disable-next-line prefer-const
+    let currentDate = new Date(startDate);
+    let dayIndex = 1;
+
+    while (currentDate <= endDate) {
+      days.push({
+        id: `day${dayIndex}`,
+        date: currentDate.toISOString().split('T')[0],
+        activities: []
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayIndex++;
+    }
+
+    const newProjectId = `proj${Date.now()}`;
+    const newProjectFull: TripProject = {
+      id: newProjectId,
+      name: newProject.name.trim(),
+      startDate: newProject.startDate,
+      endDate: newProject.endDate,
+      totalBudget: newProject.totalBudget,
+      createdAt: new Date().toISOString().split('T')[0],
+      tripPlan: {
+        id: `tp${Date.now()}`,
+        name: newProject.name.trim(),
+        startDate: newProject.startDate,
+        endDate: newProject.endDate,
+        totalBudget: newProject.totalBudget,
+        days: days
+      },
+      packingList: {
+        id: `pl${Date.now()}`,
+        tripId: newProjectId,
+        items: [],
+        categories: JSON.parse(JSON.stringify(packingCategories))
+      },
+      travelInfo: {
+        id: `ti${Date.now()}`,
+        tripId: newProjectId,
+        accommodations: [],
+        transportations: []
+      },
+      reminderList: {
+        id: `rl${Date.now()}`,
+        tripId: newProjectId,
+        reminders: []
+      },
+      reviewList: {
+        id: `rev${Date.now()}`,
+        tripId: newProjectId,
+        reviews: [],
+        photoNotes: []
+      }
+    };
+
+    setProjects([...projects, newProjectFull]);
+    setNewProject({
+      name: '',
+      startDate: '',
+      endDate: '',
+      totalBudget: 0
+    });
+    setShowAddProjectForm(false);
+  };
+
+  const handleEditProject = (project: TripProject) => {
+    setEditingProject({ ...project });
+    setShowEditProjectForm(true);
+  };
+
+  const handleSaveEditProject = () => {
+    if (!editingProject || !editingProject.name.trim() || !editingProject.startDate || !editingProject.endDate) {
+      alert('请填写项目名称、开始日期和结束日期');
+      return;
+    }
+
+    const updatedProjects = projects.map(p => {
+      if (p.id === editingProject.id) {
+        return {
+          ...editingProject,
+          tripPlan: {
+            ...p.tripPlan,
+            name: editingProject.name.trim(),
+            startDate: editingProject.startDate,
+            endDate: editingProject.endDate,
+            totalBudget: editingProject.totalBudget
+          }
+        };
+      }
+      return p;
+    });
+
+    setProjects(updatedProjects);
+
+    if (currentProjectId === editingProject.id) {
+      setTripPlan(prev => ({
+        ...prev,
+        name: editingProject.name.trim(),
+        startDate: editingProject.startDate,
+        endDate: editingProject.endDate,
+        totalBudget: editingProject.totalBudget
+      }));
+    }
+
+    setShowEditProjectForm(false);
+    setEditingProject(null);
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    const updatedProjects = projects.filter(p => p.id !== projectId);
+    setProjects(updatedProjects);
+    setShowDeleteProjectConfirm(null);
+
+    if (currentProjectId === projectId) {
+      setCurrentProjectId(null);
+      setCurrentPage('projects');
+    }
+  };
+
+  const calculateProjectDays = (startDate: string, endDate: string): number => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
 
   const checkTimeConflict = (startTime: string, endTime: string, excludeActivityId?: string): boolean => {
     const newStart = new Date(`2000-01-01 ${startTime}`);
@@ -2975,60 +3159,292 @@ function App() {
     );
   };
 
+  const renderProjectsPage = () => (
+    <div className="projects-main">
+      <div className="projects-page-header">
+        <h2>我的旅行项目</h2>
+        <p className="projects-subtitle">管理您的所有旅行计划</p>
+        {!showAddProjectForm && (
+          <button className="add-project-btn" onClick={() => setShowAddProjectForm(true)}>
+            + 创建新项目
+          </button>
+        )}
+      </div>
+
+      {showAddProjectForm && (
+        <div className="add-project-form-container">
+          <div className="add-project-form">
+            <h3>创建新旅行项目</h3>
+            <div className="form-group">
+              <label>项目名称 *</label>
+              <input
+                type="text"
+                value={newProject.name}
+                onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                placeholder="例如：东京五日游"
+                autoFocus
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>开始日期 *</label>
+                <input
+                  type="date"
+                  value={newProject.startDate}
+                  onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>结束日期 *</label>
+                <input
+                  type="date"
+                  value={newProject.endDate}
+                  onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>总预算</label>
+              <input
+                type="text"
+                value={newProject.totalBudget.toString()}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  setNewProject({ ...newProject, totalBudget: value });
+                }}
+                placeholder="请输入预算金额"
+              />
+            </div>
+            <div className="form-actions">
+              <button
+                className="cancel-btn"
+                onClick={() => {
+                  setShowAddProjectForm(false);
+                  setNewProject({
+                    name: '',
+                    startDate: '',
+                    endDate: '',
+                    totalBudget: 0
+                  });
+                }}
+              >
+                取消
+              </button>
+              <button className="save-btn" onClick={handleAddProject}>创建项目</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {projects.length === 0 ? (
+        <div className="no-projects">
+          <div className="no-projects-icon">🌍</div>
+          <h3>还没有旅行项目</h3>
+          <p>点击上方按钮创建您的第一个旅行计划</p>
+        </div>
+      ) : (
+        <div className="projects-grid">
+          {projects.map((project) => (
+            <div key={project.id} className="project-card">
+              <div className="project-card-header">
+                <div className="project-icon">
+                  {project.totalBudget > 10000 ? '✈️' : '🚄'}
+                </div>
+                <div className="project-info">
+                  <h3 className="project-name">{project.name}</h3>
+                  <p className="project-dates">
+                    {project.startDate} - {project.endDate}
+                  </p>
+                </div>
+              </div>
+              <div className="project-stats">
+                <div className="project-stat">
+                  <span className="stat-label">行程天数</span>
+                  <span className="stat-value">{calculateProjectDays(project.startDate, project.endDate)} 天</span>
+                </div>
+                <div className="project-stat">
+                  <span className="stat-label">总预算</span>
+                  <span className="stat-value">¥{project.totalBudget.toLocaleString()}</span>
+                </div>
+                <div className="project-stat">
+                  <span className="stat-label">活动数</span>
+                  <span className="stat-value">
+                    {project.tripPlan.days.reduce((sum, day) => sum + day.activities.length, 0)} 个
+                  </span>
+                </div>
+                <div className="project-stat">
+                  <span className="stat-label">创建时间</span>
+                  <span className="stat-value">{project.createdAt}</span>
+                </div>
+              </div>
+              <div className="project-actions">
+                <button
+                  className="enter-project-btn"
+                  onClick={() => handleSwitchProject(project.id)}
+                >
+                  进入项目
+                </button>
+                <button
+                  className="edit-project-btn"
+                  onClick={() => handleEditProject(project)}
+                >
+                  编辑
+                </button>
+                <button
+                  className="delete-project-btn"
+                  onClick={() => setShowDeleteProjectConfirm(project.id)}
+                >
+                  删除
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showEditProjectForm && editingProject && (
+        <div className="modal-overlay" onClick={() => setShowEditProjectForm(false)}>
+          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <h3>编辑旅行项目</h3>
+            <div className="form-group">
+              <label>项目名称 *</label>
+              <input
+                type="text"
+                value={editingProject.name}
+                onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>开始日期 *</label>
+                <input
+                  type="date"
+                  value={editingProject.startDate}
+                  onChange={(e) => setEditingProject({ ...editingProject, startDate: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>结束日期 *</label>
+                <input
+                  type="date"
+                  value={editingProject.endDate}
+                  onChange={(e) => setEditingProject({ ...editingProject, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>总预算</label>
+              <input
+                type="text"
+                value={editingProject.totalBudget.toString()}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  setEditingProject({ ...editingProject, totalBudget: value });
+                }}
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowEditProjectForm(false)}>
+                取消
+              </button>
+              <button className="save-btn" onClick={handleSaveEditProject}>
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="app">
-      <header className="header">
-        <h1>{tripPlan.name}</h1>
-        <div className="header-nav">
-          <button
-            className={`nav-btn ${currentPage === 'itinerary' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('itinerary')}
-          >
-            行程安排
-          </button>
-          <button
-            className={`nav-btn ${currentPage === 'packing' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('packing')}
-          >
-            物品清单
-            {getUnpackedCount() > 0 && (
-              <span className="unpacked-badge">{getUnpackedCount()}</span>
-            )}
-          </button>
-          <button
-            className={`nav-btn ${currentPage === 'templates' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('templates')}
-          >
-            清单模板
-          </button>
-          <button
-            className={`nav-btn ${currentPage === 'travel' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('travel')}
-          >
-            住宿交通
-          </button>
-          <button
-            className={`nav-btn ${currentPage === 'reminders' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('reminders')}
-          >
-            提醒待办
-            {getIncompleteRemindersCount() > 0 && (
-              <span className="unpacked-badge">{getIncompleteRemindersCount()}</span>
-            )}
-          </button>
-          <button
-            className={`nav-btn ${currentPage === 'reviews' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('reviews')}
-          >
-            旅行回顾
-          </button>
-        </div>
-        <div className="trip-dates">
-          <span>{tripPlan.startDate}</span> - <span>{tripPlan.endDate}</span>
-        </div>
-      </header>
+      {currentPage !== 'projects' ? (
+        <header className="header">
+          <div className="header-left">
+            <button className="back-to-projects-btn" onClick={handleBackToProjects}>
+              ← 返回项目列表
+            </button>
+            <h1>{tripPlan.name}</h1>
+          </div>
+          <div className="header-nav">
+            <button
+              className={`nav-btn ${currentPage === 'itinerary' ? 'active' : ''}`}
+              onClick={() => setCurrentPage('itinerary')}
+            >
+              行程安排
+            </button>
+            <button
+              className={`nav-btn ${currentPage === 'packing' ? 'active' : ''}`}
+              onClick={() => setCurrentPage('packing')}
+            >
+              物品清单
+              {getUnpackedCount() > 0 && (
+                <span className="nav-badge">{getUnpackedCount()}</span>
+              )}
+            </button>
+            <button
+              className={`nav-btn ${currentPage === 'travel' ? 'active' : ''}`}
+              onClick={() => setCurrentPage('travel')}
+            >
+              住宿交通
+            </button>
+            <button
+              className={`nav-btn ${currentPage === 'reminders' ? 'active' : ''}`}
+              onClick={() => setCurrentPage('reminders')}
+            >
+              提醒待办
+              {getIncompleteRemindersCount() > 0 && (
+                <span className="nav-badge">{getIncompleteRemindersCount()}</span>
+              )}
+            </button>
+            <div className="more-menu-container">
+              <button
+                className={`nav-btn more-btn ${
+                  currentPage === 'templates' || currentPage === 'reviews' ? 'active' : ''
+                }`}
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+              >
+                更多 ▼
+              </button>
+              {showMoreMenu && (
+                <div className="more-menu-dropdown">
+                  <button
+                    className={`more-menu-item ${currentPage === 'templates' ? 'active' : ''}`}
+                    onClick={() => {
+                      setCurrentPage('templates');
+                      setShowMoreMenu(false);
+                    }}
+                  >
+                    清单模板
+                  </button>
+                  <button
+                    className={`more-menu-item ${currentPage === 'reviews' ? 'active' : ''}`}
+                    onClick={() => {
+                      setCurrentPage('reviews');
+                      setShowMoreMenu(false);
+                    }}
+                  >
+                    旅行回顾
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="trip-dates">
+            <span>{tripPlan.startDate}</span> - <span>{tripPlan.endDate}</span>
+          </div>
+        </header>
+      ) : (
+        <header className="header projects-header">
+          <h1>🌍 旅行计划器</h1>
+          <p className="header-subtitle">管理您的所有旅行项目</p>
+        </header>
+      )}
 
-      {currentPage === 'itinerary'
+      {currentPage === 'projects'
+        ? renderProjectsPage()
+        : currentPage === 'itinerary'
         ? renderItineraryPage()
         : currentPage === 'packing'
         ? renderPackingPage()
@@ -3039,6 +3455,19 @@ function App() {
         : currentPage === 'reminders'
         ? renderRemindersPage()
         : renderReviewsPage()}
+
+      {showDeleteProjectConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteProjectConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这个旅行项目吗？该项目下的所有行程、物品清单、住宿交通、提醒待办等内容都将被删除。此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteProjectConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteProject(showDeleteProjectConfirm!)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeleteDayConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteDayConfirm(false)}>

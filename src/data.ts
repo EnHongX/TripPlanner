@@ -448,3 +448,195 @@ export const mockReviewList: ReviewList = {
   reviews: mockDayReviews,
   photoNotes: mockPhotoNotes
 };
+
+export const mockTripProjects: TripProject[] = [
+  {
+    id: 'proj1',
+    name: '东京五日游',
+    startDate: '2024-05-01',
+    endDate: '2024-05-05',
+    totalBudget: 50000,
+    createdAt: '2024-04-01',
+    tripPlan: JSON.parse(JSON.stringify(mockTripPlan)),
+    packingList: {
+      id: 'pl1',
+      tripId: 'proj1',
+      items: [
+        { id: 'item1', name: '护照', category: 'documents', isPacked: true },
+        { id: 'item2', name: '身份证', category: 'documents', isPacked: false },
+        { id: 'item3', name: '机票', category: 'documents', isPacked: true },
+        { id: 'item4', name: 'T恤 x5', category: 'clothes', isPacked: false },
+        { id: 'item5', name: '牛仔裤 x2', category: 'clothes', isPacked: true },
+        { id: 'item6', name: '牙刷牙膏', category: 'toiletries', isPacked: true },
+        { id: 'item7', name: '手机', category: 'electronics', isPacked: true },
+        { id: 'item8', name: '充电器', category: 'electronics', isPacked: true }
+      ],
+      categories: packingCategories
+    },
+    travelInfo: JSON.parse(JSON.stringify(mockTravelInfo)),
+    reminderList: JSON.parse(JSON.stringify(mockReminderList)),
+    reviewList: JSON.parse(JSON.stringify(mockReviewList))
+  },
+  {
+    id: 'proj2',
+    name: '杭州周末游',
+    startDate: '2024-06-15',
+    endDate: '2024-06-16',
+    totalBudget: 3000,
+    createdAt: '2024-05-10',
+    tripPlan: {
+      id: 'tp2',
+      name: '杭州周末游',
+      startDate: '2024-06-15',
+      endDate: '2024-06-16',
+      totalBudget: 3000,
+      days: [
+        {
+          id: 'day1',
+          date: '2024-06-15',
+          activities: [
+            {
+              id: 'act1',
+              title: '抵达杭州',
+              description: '乘坐高铁抵达杭州东站',
+              startTime: '09:00',
+              endTime: '10:30',
+              location: '杭州东站',
+              budget: 200
+            },
+            {
+              id: 'act2',
+              title: '西湖游览',
+              description: '游览西湖，断桥残雪，白堤',
+              startTime: '11:00',
+              endTime: '17:00',
+              location: '西湖风景区',
+              budget: 500
+            }
+          ]
+        },
+        {
+          id: 'day2',
+          date: '2024-06-16',
+          activities: [
+            {
+              id: 'act3',
+              title: '灵隐寺',
+              description: '参观灵隐寺，飞来峰',
+              startTime: '09:00',
+              endTime: '12:00',
+              location: '灵隐寺',
+              budget: 150
+            },
+            {
+              id: 'act4',
+              title: '返程',
+              description: '乘坐高铁返回上海',
+              startTime: '14:00',
+              endTime: '15:30',
+              location: '杭州东站',
+              budget: 200
+            }
+          ]
+        }
+      ]
+    },
+    packingList: {
+      id: 'pl2',
+      tripId: 'proj2',
+      items: [
+        { id: 'item1', name: '身份证', category: 'documents', isPacked: true },
+        { id: 'item2', name: '手机', category: 'electronics', isPacked: true },
+        { id: 'item3', name: '充电器', category: 'electronics', isPacked: true }
+      ],
+      categories: packingCategories
+    },
+    travelInfo: {
+      id: 'ti2',
+      tripId: 'proj2',
+      accommodations: [
+        {
+          id: 'acc1',
+          name: '西湖国宾馆',
+          address: '杭州市西湖区杨公堤18号',
+          checkInDate: '2024-06-15',
+          checkOutDate: '2024-06-16',
+          roomType: '豪华湖景房',
+          price: 1200,
+          bookingNumber: 'HZ20240615001',
+          notes: '含早餐，免费WiFi'
+        }
+      ],
+      transportations: [
+        {
+          id: 'trans1',
+          type: 'train',
+          number: 'G7351',
+          fromLocation: '上海虹桥',
+          toLocation: '杭州东',
+          departureTime: '2024-06-15 09:00',
+          arrivalTime: '2024-06-15 10:30',
+          price: 117,
+          seatNumber: '07车05A',
+          bookingNumber: 'TR20240615001',
+          notes: '二等座'
+        },
+        {
+          id: 'trans2',
+          type: 'train',
+          number: 'G7356',
+          fromLocation: '杭州东',
+          toLocation: '上海虹桥',
+          departureTime: '2024-06-16 14:00',
+          arrivalTime: '2024-06-16 15:30',
+          price: 117,
+          seatNumber: '05车12B',
+          bookingNumber: 'TR20240616001',
+          notes: '二等座'
+        }
+      ]
+    },
+    reminderList: {
+      id: 'rl2',
+      tripId: 'proj2',
+      reminders: [
+        {
+          id: 'rem1',
+          title: '预订酒店',
+          description: '提前一周预订西湖附近的酒店',
+          type: 'booking',
+          date: '2024-06-08',
+          time: '10:00',
+          isCompleted: true,
+          createdAt: '2024-05-15'
+        },
+        {
+          id: 'rem2',
+          title: '购买高铁票',
+          description: '购买往返杭州的高铁票',
+          type: 'booking',
+          date: '2024-06-10',
+          time: '14:00',
+          isCompleted: true,
+          createdAt: '2024-05-15'
+        },
+        {
+          id: 'rem3',
+          title: '查看天气',
+          description: '出发前查看杭州天气预报',
+          type: 'other',
+          date: '2024-06-14',
+          time: '20:00',
+          isCompleted: false,
+          createdAt: '2024-05-20'
+        }
+      ]
+    },
+    reviewList: {
+      id: 'rl2',
+      tripId: 'proj2',
+      reviews: [],
+      photoNotes: []
+    }
+  }
+];
