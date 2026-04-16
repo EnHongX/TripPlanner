@@ -1,4 +1,4 @@
-import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate, TravelInfo, Transportation, Accommodation } from './types';
+import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate, TravelInfo, Transportation, Accommodation, Reminder, ReminderList } from './types';
 
 export const packingCategories: PackingCategory[] = [
   { id: 'documents', name: '证件', icon: '📄' },
@@ -319,4 +319,73 @@ export const mockTravelInfo: TravelInfo = {
   tripId: '1',
   accommodations: mockAccommodations,
   transportations: mockTransportations
+};
+
+export const mockReminders: Reminder[] = [
+  {
+    id: 'rem1',
+    title: '确认护照有效期',
+    description: '检查护照是否在有效期内，确保至少还有6个月有效期',
+    type: 'document',
+    date: '2024-04-20',
+    time: '10:00',
+    isCompleted: true,
+    createdAt: '2024-04-10'
+  },
+  {
+    id: 'rem2',
+    title: '预订东京酒店',
+    description: '预订新宿地区的酒店，靠近地铁站',
+    type: 'booking',
+    date: '2024-04-25',
+    time: '14:00',
+    isCompleted: true,
+    createdAt: '2024-04-12'
+  },
+  {
+    id: 'rem3',
+    title: '购买旅行保险',
+    description: '购买涵盖医疗和行李损失的旅行保险',
+    type: 'other',
+    date: '2024-04-28',
+    time: '16:00',
+    isCompleted: false,
+    createdAt: '2024-04-15'
+  },
+  {
+    id: 'rem4',
+    title: '准备随身物品清单',
+    description: '列出需要随身携带的物品，避免遗漏',
+    type: 'packing',
+    date: '2024-04-30',
+    time: '09:00',
+    isCompleted: false,
+    createdAt: '2024-04-18'
+  },
+  {
+    id: 'rem5',
+    title: '确认机票行程',
+    description: '再次确认航班时间和座位选择',
+    type: 'booking',
+    date: '2024-05-01',
+    time: '08:00',
+    isCompleted: false,
+    createdAt: '2024-04-20'
+  },
+  {
+    id: 'rem6',
+    title: '安排机场接送',
+    description: '预订从酒店到成田机场的接送服务',
+    type: 'activity',
+    date: '2024-05-05',
+    time: '10:00',
+    isCompleted: false,
+    createdAt: '2024-04-22'
+  }
+];
+
+export const mockReminderList: ReminderList = {
+  id: '1',
+  tripId: '1',
+  reminders: mockReminders
 };
