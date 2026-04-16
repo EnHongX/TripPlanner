@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import './App.css';
-import { packingCategories, mockPackingList, mockTripPlan } from './data';
-import type { PackingItem, PackingList, PackingCategory, TripPlan, DayPlan, Activity } from './types';
+import { packingCategories, mockPackingList, mockTripPlan, packingTemplates } from './data';
+import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem } from './types';
 
-type PageType = 'itinerary' | 'packing';
+type PageType = 'itinerary' | 'packing' | 'templates';
 
 const initialTripPlan: TripPlan = mockTripPlan;
 const initialPackingList: PackingList = mockPackingList;
+const initialTemplates: PackingTemplate[] = JSON.parse(JSON.stringify(packingTemplates));
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('itinerary');
@@ -45,6 +46,23 @@ function App() {
     location: '',
     budget: 0
   });
+
+  const [templates, setTemplates] = useState<PackingTemplate[]>(initialTemplates);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [showEditTemplate, setShowEditTemplate] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<PackingTemplate | null>(null);
+  const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
+  const [showAddTemplateItemForm, setShowAddTemplateItemForm] = useState(false);
+  const [showDeleteTemplateConfirm, setShowDeleteTemplateConfirm] = useState<string | null>(null);
+  const [showDeleteCategoryConfirm, setShowDeleteCategoryConfirm] = useState<{ templateId: string; categoryId: string } | null>(null);
+  const [showDeleteItemConfirmTemplate, setShowDeleteItemConfirmTemplate] = useState<{ templateId: string; itemId: string } | null>(null);
+  const [showApplyTemplateConfirm, setShowApplyTemplateConfirm] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('📁');
+  const [newTemplateItemName, setNewTemplateItemName] = useState('');
+  const [newTemplateItemCategoryId, setNewTemplateItemCategoryId] = useState('');
+  const [editingCategory, setEditingCategory] = useState<{ templateId: string; category: TemplateCategory } | null>(null);
+  const [editingItem, setEditingItem] = useState<{ templateId: string; item: TemplateItem } | null>(null);
 
   const checkTimeConflict = (startTime: string, endTime: string, excludeActivityId?: string): boolean => {
     const newStart = new Date(`2000-01-01 ${startTime}`);
@@ -221,15 +239,17 @@ function App() {
     setEditedTotalBudget(sanitizedValue);
   };
 
+  type ActivityWithBudget = { budget: number } & Record<string, unknown>;
+
   const handleActivityBudgetInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<any>>,
-    state: any
+    setter: React.Dispatch<React.SetStateAction<ActivityWithBudget>>,
+    state: ActivityWithBudget
   ) => {
     const value = e.target.value;
     const sanitizedValue = sanitizeBudgetInput(value);
     const budgetValue = parseInt(sanitizedValue) || 0;
-    setter({ ...state, budget: budgetValue });
+    setter({ ...state, budget: budgetValue } as ActivityWithBudget);
   };
 
   const handleStartEditingBudget = () => {
@@ -310,6 +330,197 @@ function App() {
 
   const getTotalCount = (): number => {
     return packingList.items.length;
+  };
+
+  const getTemplateById = (templateId: string): PackingTemplate | undefined => {
+    return templates.find(t => t.id === templateId);
+  };
+
+  const handleEditTemplate = (template: PackingTemplate) => {
+    setEditingTemplate({ ...template });
+    setShowEditTemplate(true);
+  };
+
+  const handleSaveEditTemplate = () => {
+    if (!editingTemplate || !editingTemplate.name.trim()) {
+      alert('请输入模板名称');
+      return;
+    }
+
+    const updatedTemplates = templates.map(t =>
+      t.id === editingTemplate.id ? editingTemplate : t
+    );
+    setTemplates(updatedTemplates);
+    setShowEditTemplate(false);
+    setEditingTemplate(null);
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    const updatedTemplates = templates.filter(t => t.id !== templateId);
+    setTemplates(updatedTemplates);
+    setShowDeleteTemplateConfirm(null);
+    if (selectedTemplateId === templateId) {
+      setSelectedTemplateId(null);
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim() || !editingTemplate) {
+      alert('请输入类别名称');
+      return;
+    }
+
+    const newCategory: TemplateCategory = {
+      id: `cat${Date.now()}`,
+      name: newCategoryName.trim(),
+      icon: newCategoryIcon
+    };
+
+    const updatedTemplate = {
+      ...editingTemplate,
+      categories: [...editingTemplate.categories, newCategory]
+    };
+
+    setEditingTemplate(updatedTemplate);
+    setNewCategoryName('');
+    setNewCategoryIcon('📁');
+    setShowAddCategoryForm(false);
+  };
+
+  const handleEditCategory = (templateId: string, category: TemplateCategory) => {
+    setEditingCategory({ templateId, category: { ...category } });
+  };
+
+  const handleSaveEditCategory = () => {
+    if (!editingCategory || !editingCategory.category.name.trim()) {
+      alert('请输入类别名称');
+      return;
+    }
+
+    const updatedTemplates = templates.map(template => {
+      if (template.id === editingCategory.templateId) {
+        return {
+          ...template,
+          categories: template.categories.map(cat =>
+            cat.id === editingCategory.category.id ? editingCategory.category : cat
+          )
+        };
+      }
+      return template;
+    });
+
+    setTemplates(updatedTemplates);
+    setEditingCategory(null);
+  };
+
+  const handleDeleteCategory = (templateId: string, categoryId: string) => {
+    const updatedTemplates = templates.map(template => {
+      if (template.id === templateId) {
+        return {
+          ...template,
+          categories: template.categories.filter(cat => cat.id !== categoryId),
+          items: template.items.filter(item => item.categoryId !== categoryId)
+        };
+      }
+      return template;
+    });
+
+    setTemplates(updatedTemplates);
+    setShowDeleteCategoryConfirm(null);
+  };
+
+  const handleAddTemplateItem = (templateId: string) => {
+    if (!newTemplateItemName.trim() || !newTemplateItemCategoryId) {
+      alert('请输入物品名称并选择类别');
+      return;
+    }
+
+    const newItem: TemplateItem = {
+      id: `item${Date.now()}`,
+      name: newTemplateItemName.trim(),
+      categoryId: newTemplateItemCategoryId
+    };
+
+    const updatedTemplates = templates.map(template => {
+      if (template.id === templateId) {
+        return {
+          ...template,
+          items: [...template.items, newItem]
+        };
+      }
+      return template;
+    });
+
+    setTemplates(updatedTemplates);
+    setNewTemplateItemName('');
+    setNewTemplateItemCategoryId('');
+    setShowAddTemplateItemForm(false);
+  };
+
+  const handleEditItem = (templateId: string, item: TemplateItem) => {
+    setEditingItem({ templateId, item: { ...item } });
+  };
+
+  const handleSaveEditItem = () => {
+    if (!editingItem || !editingItem.item.name.trim()) {
+      alert('请输入物品名称');
+      return;
+    }
+
+    const updatedTemplates = templates.map(template => {
+      if (template.id === editingItem.templateId) {
+        return {
+          ...template,
+          items: template.items.map(item =>
+            item.id === editingItem.item.id ? editingItem.item : item
+          )
+        };
+      }
+      return template;
+    });
+
+    setTemplates(updatedTemplates);
+    setEditingItem(null);
+  };
+
+  const handleDeleteItemTemplate = (templateId: string, itemId: string) => {
+    const updatedTemplates = templates.map(template => {
+      if (template.id === templateId) {
+        return {
+          ...template,
+          items: template.items.filter(item => item.id !== itemId)
+        };
+      }
+      return template;
+    });
+
+    setTemplates(updatedTemplates);
+    setShowDeleteItemConfirmTemplate(null);
+  };
+
+  const handleApplyTemplate = (templateId: string) => {
+    const template = getTemplateById(templateId);
+    if (!template) return;
+
+    const categoryMap: Record<string, string> = {};
+    template.categories.forEach(cat => {
+      categoryMap[cat.id] = cat.id;
+    });
+
+    const newItems: PackingItem[] = template.items.map(item => ({
+      id: `item${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: item.name,
+      category: item.categoryId,
+      isPacked: false
+    }));
+
+    setPackingList({
+      ...packingList,
+      items: [...packingList.items, ...newItems]
+    });
+
+    setShowApplyTemplateConfirm(null);
+    alert(`模板 "${template.name}" 已应用到当前物品清单！`);
   };
 
   const totalBudget = calculateTotalBudget();
@@ -702,6 +913,197 @@ function App() {
     </div>
   );
 
+  const renderTemplatesPage = () => {
+    const selectedTemplate = selectedTemplateId ? getTemplateById(selectedTemplateId) : null;
+
+    return (
+      <div className="main-content">
+        <aside className="sidebar">
+          <h2>清单模板</h2>
+          <div className="template-list">
+            {templates.map((template) => (
+              <div
+                key={template.id}
+                className={`template-item ${selectedTemplateId === template.id ? 'active' : ''}`}
+                onClick={() => setSelectedTemplateId(template.id)}
+              >
+                <div className="template-item-content">
+                  <span className="template-icon">{template.icon}</span>
+                  <span className="template-name">{template.name}</span>
+                  <span className="template-count">
+                    {template.items.length} 个物品
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <main className="content">
+          {selectedTemplate ? (
+            <>
+              <div className="template-header">
+                <div className="template-title-section">
+                  <span className="template-main-icon">{selectedTemplate.icon}</span>
+                  <div>
+                    <h2>{selectedTemplate.name}</h2>
+                    <p className="template-description">{selectedTemplate.description}</p>
+                  </div>
+                </div>
+                <div className="template-actions">
+                  <button
+                    className="apply-btn"
+                    onClick={() => setShowApplyTemplateConfirm(selectedTemplate.id)}
+                    title="应用到当前清单"
+                  >
+                    应用模板
+                  </button>
+                  <button
+                    className="edit-btn"
+                    onClick={() => handleEditTemplate(selectedTemplate)}
+                    title="编辑模板"
+                  >
+                    编辑
+                  </button>
+                </div>
+              </div>
+
+              <div className="template-categories">
+                {selectedTemplate.categories.map((category) => {
+                  const categoryItems = selectedTemplate.items.filter(
+                    (item) => item.categoryId === category.id
+                  );
+
+                  if (categoryItems.length === 0) return null;
+
+                  return (
+                    <div key={category.id} className="template-category">
+                      <div className="template-category-header">
+                        <h3>
+                          <span className="category-icon">{category.icon}</span>
+                          {category.name}
+                        </h3>
+                        <div className="category-header-actions">
+                          <span className="category-item-count">
+                            {categoryItems.length} 个物品
+                          </span>
+                          <button
+                            className="item-edit-btn"
+                            onClick={() => handleEditCategory(selectedTemplate.id, category)}
+                            title="编辑类别"
+                          >
+                            编辑
+                          </button>
+                          <button
+                            className="item-delete-btn"
+                            onClick={() =>
+                              setShowDeleteCategoryConfirm({
+                                templateId: selectedTemplate.id,
+                                categoryId: category.id
+                              })
+                            }
+                            title="删除类别"
+                          >
+                            删除
+                          </button>
+                        </div>
+                      </div>
+                      <div className="template-items">
+                        {categoryItems.map((item) => (
+                          <div key={item.id} className="template-item-row">
+                            <span className="item-name">{item.name}</span>
+                            <div className="item-actions">
+                              <button
+                                className="item-edit-btn"
+                                onClick={() => handleEditItem(selectedTemplate.id, item)}
+                                title="编辑物品"
+                              >
+                                编辑
+                              </button>
+                              <button
+                                className="item-delete-btn"
+                                onClick={() =>
+                                  setShowDeleteItemConfirmTemplate({
+                                    templateId: selectedTemplate.id,
+                                    itemId: item.id
+                                  })
+                                }
+                                title="删除物品"
+                              >
+                                删除
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="template-bottom-actions">
+                <button
+                  className="add-category-btn"
+                  onClick={() => {
+                    setEditingTemplate({ ...selectedTemplate });
+                    setShowAddCategoryForm(true);
+                  }}
+                >
+                  添加类别
+                </button>
+                <button
+                  className="add-item-btn"
+                  onClick={() => {
+                    setNewTemplateItemCategoryId(selectedTemplate.categories[0]?.id || '');
+                    setShowAddTemplateItemForm(true);
+                  }}
+                >
+                  添加物品
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="no-template-selected">
+              <p>请从左侧选择一个模板查看详情</p>
+            </div>
+          )}
+        </main>
+
+        <aside className="budget-sidebar">
+          <h2>模板统计</h2>
+          {selectedTemplate ? (
+            <>
+              <div className="stat-item">
+                <span>类别数量</span>
+                <span className="stat-value">{selectedTemplate.categories.length}</span>
+              </div>
+              <div className="stat-item">
+                <span>物品总数</span>
+                <span className="stat-value">{selectedTemplate.items.length}</span>
+              </div>
+              {selectedTemplate.categories.map((category) => {
+                const itemCount = selectedTemplate.items.filter(
+                  (item) => item.categoryId === category.id
+                ).length;
+                if (itemCount === 0) return null;
+                return (
+                  <div key={category.id} className="stat-item">
+                    <span>
+                      {category.icon} {category.name}
+                    </span>
+                    <span className="stat-value">{itemCount}</span>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            <p className="no-stats">请选择一个模板查看统计</p>
+          )}
+        </aside>
+      </div>
+    );
+  };
+
   return (
     <div className="app">
       <header className="header">
@@ -722,13 +1124,23 @@ function App() {
               <span className="unpacked-badge">{getUnpackedCount()}</span>
             )}
           </button>
+          <button
+            className={`nav-btn ${currentPage === 'templates' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('templates')}
+          >
+            清单模板
+          </button>
         </div>
         <div className="trip-dates">
           <span>{tripPlan.startDate}</span> - <span>{tripPlan.endDate}</span>
         </div>
       </header>
 
-      {currentPage === 'itinerary' ? renderItineraryPage() : renderPackingPage()}
+      {currentPage === 'itinerary'
+        ? renderItineraryPage()
+        : currentPage === 'packing'
+        ? renderPackingPage()
+        : renderTemplatesPage()}
 
       {showDeleteDayConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteDayConfirm(false)}>
@@ -764,6 +1176,243 @@ function App() {
             <div className="modal-actions">
               <button className="cancel-btn" onClick={() => setShowDeleteItemConfirm(null)}>取消</button>
               <button className="delete-btn" onClick={() => handleDeleteItem(showDeleteItemConfirm!)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditTemplate && editingTemplate && (
+        <div className="modal-overlay" onClick={() => setShowEditTemplate(false)}>
+          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <h3>编辑模板</h3>
+            <div className="form-group">
+              <label>模板名称</label>
+              <input
+                type="text"
+                value={editingTemplate.name}
+                onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>模板描述</label>
+              <textarea
+                value={editingTemplate.description}
+                onChange={(e) => setEditingTemplate({ ...editingTemplate, description: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>模板图标</label>
+              <input
+                type="text"
+                value={editingTemplate.icon}
+                onChange={(e) => setEditingTemplate({ ...editingTemplate, icon: e.target.value })}
+                placeholder="输入 emoji 图标"
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowEditTemplate(false)}>取消</button>
+              <button className="save-btn" onClick={handleSaveEditTemplate}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddCategoryForm && editingTemplate && (
+        <div className="modal-overlay" onClick={() => setShowAddCategoryForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>添加类别</h3>
+            <div className="form-group">
+              <label>类别名称</label>
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="输入类别名称"
+                autoFocus
+              />
+            </div>
+            <div className="form-group">
+              <label>类别图标</label>
+              <input
+                type="text"
+                value={newCategoryIcon}
+                onChange={(e) => setNewCategoryIcon(e.target.value)}
+                placeholder="输入 emoji 图标"
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowAddCategoryForm(false)}>取消</button>
+              <button className="save-btn" onClick={handleAddCategory}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddTemplateItemForm && selectedTemplateId && (
+        <div className="modal-overlay" onClick={() => setShowAddTemplateItemForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>添加物品</h3>
+            <div className="form-group">
+              <label>物品名称</label>
+              <input
+                type="text"
+                value={newTemplateItemName}
+                onChange={(e) => setNewTemplateItemName(e.target.value)}
+                placeholder="输入物品名称"
+                autoFocus
+              />
+            </div>
+            <div className="form-group">
+              <label>所属类别</label>
+              <select
+                value={newTemplateItemCategoryId}
+                onChange={(e) => setNewTemplateItemCategoryId(e.target.value)}
+              >
+                {(getTemplateById(selectedTemplateId)?.categories || []).map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.icon} {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowAddTemplateItemForm(false)}>取消</button>
+              <button className="save-btn" onClick={() => handleAddTemplateItem(selectedTemplateId)}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingCategory && (
+        <div className="modal-overlay" onClick={() => setEditingCategory(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>编辑类别</h3>
+            <div className="form-group">
+              <label>类别名称</label>
+              <input
+                type="text"
+                value={editingCategory.category.name}
+                onChange={(e) =>
+                  setEditingCategory({
+                    ...editingCategory,
+                    category: { ...editingCategory.category, name: e.target.value }
+                  })
+                }
+                autoFocus
+              />
+            </div>
+            <div className="form-group">
+              <label>类别图标</label>
+              <input
+                type="text"
+                value={editingCategory.category.icon}
+                onChange={(e) =>
+                  setEditingCategory({
+                    ...editingCategory,
+                    category: { ...editingCategory.category, icon: e.target.value }
+                  })
+                }
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setEditingCategory(null)}>取消</button>
+              <button className="save-btn" onClick={handleSaveEditCategory}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingItem && (
+        <div className="modal-overlay" onClick={() => setEditingItem(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>编辑物品</h3>
+            <div className="form-group">
+              <label>物品名称</label>
+              <input
+                type="text"
+                value={editingItem.item.name}
+                onChange={(e) =>
+                  setEditingItem({
+                    ...editingItem,
+                    item: { ...editingItem.item, name: e.target.value }
+                  })
+                }
+                autoFocus
+              />
+            </div>
+            <div className="form-group">
+              <label>所属类别</label>
+              <select
+                value={editingItem.item.categoryId}
+                onChange={(e) =>
+                  setEditingItem({
+                    ...editingItem,
+                    item: { ...editingItem.item, categoryId: e.target.value }
+                  })
+                }
+              >
+                {(getTemplateById(editingItem.templateId)?.categories || []).map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.icon} {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setEditingItem(null)}>取消</button>
+              <button className="save-btn" onClick={handleSaveEditItem}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteTemplateConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteTemplateConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这个模板吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteTemplateConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteTemplate(showDeleteTemplateConfirm!)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteCategoryConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteCategoryConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这个类别吗？该类别下的所有物品也将被删除。此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteCategoryConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteCategory(showDeleteCategoryConfirm.templateId, showDeleteCategoryConfirm.categoryId)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteItemConfirmTemplate && (
+        <div className="modal-overlay" onClick={() => setShowDeleteItemConfirmTemplate(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这个物品吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteItemConfirmTemplate(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteItemTemplate(showDeleteItemConfirmTemplate.templateId, showDeleteItemConfirmTemplate.itemId)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showApplyTemplateConfirm && (
+        <div className="modal-overlay" onClick={() => setShowApplyTemplateConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>应用模板</h3>
+            <p>确定要将此模板应用到当前物品清单吗？模板中的所有物品将被添加到当前清单中。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowApplyTemplateConfirm(null)}>取消</button>
+              <button className="save-btn" onClick={() => handleApplyTemplate(showApplyTemplateConfirm!)}>确认应用</button>
             </div>
           </div>
         </div>
