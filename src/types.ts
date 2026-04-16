@@ -41,3 +41,24 @@ export interface PackingList {
   tripId: string;
   items: PackingItem[];
 }
+
+export interface TemplateCategory {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+export interface TemplateItem {
+  id: string;
+  name: string;
+  categoryId: string;
+}
+
+export interface PackingTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  categories: TemplateCategory[];
+  items: TemplateItem[];
+}

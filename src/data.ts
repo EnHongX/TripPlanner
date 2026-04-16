@@ -1,4 +1,4 @@
-import type { TripPlan, PackingItem, PackingCategory, PackingList } from './types';
+import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate } from './types';
 
 export const packingCategories: PackingCategory[] = [
   { id: 'documents', name: '证件', icon: '📄' },
@@ -131,3 +131,117 @@ export const mockTripPlan: TripPlan = {
     }
   ]
 };
+
+export const packingTemplates: PackingTemplate[] = [
+  {
+    id: 'abroad',
+    name: '出国旅行',
+    description: '适合国际长途旅行的物品清单',
+    icon: '✈️',
+    categories: [
+      { id: 'abroad-documents', name: '证件文件', icon: '📄' },
+      { id: 'abroad-clothes', name: '衣物', icon: '👕' },
+      { id: 'abroad-electronics', name: '电子设备', icon: '📱' },
+      { id: 'abroad-toiletries', name: '洗漱用品', icon: '🧴' },
+      { id: 'abroad-medicine', name: '药品', icon: '💊' }
+    ],
+    items: [
+      { id: 'abroad-1', name: '护照', categoryId: 'abroad-documents' },
+      { id: 'abroad-2', name: '身份证', categoryId: 'abroad-documents' },
+      { id: 'abroad-3', name: '签证', categoryId: 'abroad-documents' },
+      { id: 'abroad-4', name: '机票行程单', categoryId: 'abroad-documents' },
+      { id: 'abroad-5', name: '酒店预订确认单', categoryId: 'abroad-documents' },
+      { id: 'abroad-6', name: '保险单', categoryId: 'abroad-documents' },
+      { id: 'abroad-7', name: '国际驾照', categoryId: 'abroad-documents' },
+      { id: 'abroad-8', name: 'T恤 x5', categoryId: 'abroad-clothes' },
+      { id: 'abroad-9', name: '长袖衬衫 x2', categoryId: 'abroad-clothes' },
+      { id: 'abroad-10', name: '牛仔裤 x2', categoryId: 'abroad-clothes' },
+      { id: 'abroad-11', name: '外套', categoryId: 'abroad-clothes' },
+      { id: 'abroad-12', name: '内衣裤 x7', categoryId: 'abroad-clothes' },
+      { id: 'abroad-13', name: '袜子 x7', categoryId: 'abroad-clothes' },
+      { id: 'abroad-14', name: '睡衣', categoryId: 'abroad-clothes' },
+      { id: 'abroad-15', name: '泳衣', categoryId: 'abroad-clothes' },
+      { id: 'abroad-16', name: '手机', categoryId: 'abroad-electronics' },
+      { id: 'abroad-17', name: '充电器', categoryId: 'abroad-electronics' },
+      { id: 'abroad-18', name: '转换插头', categoryId: 'abroad-electronics' },
+      { id: 'abroad-19', name: '移动电源', categoryId: 'abroad-electronics' },
+      { id: 'abroad-20', name: '相机', categoryId: 'abroad-electronics' },
+      { id: 'abroad-21', name: '耳机', categoryId: 'abroad-electronics' },
+      { id: 'abroad-22', name: '平板电脑', categoryId: 'abroad-electronics' },
+      { id: 'abroad-23', name: '牙刷牙膏', categoryId: 'abroad-toiletries' },
+      { id: 'abroad-24', name: '洗面奶', categoryId: 'abroad-toiletries' },
+      { id: 'abroad-25', name: '洗发水', categoryId: 'abroad-toiletries' },
+      { id: 'abroad-26', name: '沐浴露', categoryId: 'abroad-toiletries' },
+      { id: 'abroad-27', name: '防晒霜', categoryId: 'abroad-toiletries' },
+      { id: 'abroad-28', name: '护肤品套装', categoryId: 'abroad-toiletries' },
+      { id: 'abroad-29', name: '剃须刀', categoryId: 'abroad-toiletries' },
+      { id: 'abroad-30', name: '创可贴', categoryId: 'abroad-medicine' },
+      { id: 'abroad-31', name: '感冒药', categoryId: 'abroad-medicine' },
+      { id: 'abroad-32', name: '肠胃药', categoryId: 'abroad-medicine' },
+      { id: 'abroad-33', name: '晕车药', categoryId: 'abroad-medicine' },
+      { id: 'abroad-34', name: '驱蚊液', categoryId: 'abroad-medicine' }
+    ]
+  },
+  {
+    id: 'local',
+    name: '市内游玩',
+    description: '适合城市短途旅行的物品清单',
+    icon: '🏙️',
+    categories: [
+      { id: 'local-essentials', name: '随身物品', icon: '🎒' },
+      { id: 'local-electronics', name: '电子设备', icon: '📱' },
+      { id: 'local-clothes', name: '衣物', icon: '👕' }
+    ],
+    items: [
+      { id: 'local-1', name: '手机', categoryId: 'local-essentials' },
+      { id: 'local-2', name: '钱包', categoryId: 'local-essentials' },
+      { id: 'local-3', name: '身份证', categoryId: 'local-essentials' },
+      { id: 'local-4', name: '钥匙', categoryId: 'local-essentials' },
+      { id: 'local-5', name: '口罩', categoryId: 'local-essentials' },
+      { id: 'local-6', name: '纸巾', categoryId: 'local-essentials' },
+      { id: 'local-7', name: '充电器', categoryId: 'local-electronics' },
+      { id: 'local-8', name: '移动电源', categoryId: 'local-electronics' },
+      { id: 'local-9', name: '耳机', categoryId: 'local-electronics' },
+      { id: 'local-10', name: '相机', categoryId: 'local-electronics' },
+      { id: 'local-11', name: '外套', categoryId: 'local-clothes' },
+      { id: 'local-12', name: '帽子', categoryId: 'local-clothes' },
+      { id: 'local-13', name: '墨镜', categoryId: 'local-clothes' }
+    ]
+  },
+  {
+    id: 'business',
+    name: '商务出差',
+    description: '适合商务旅行的物品清单',
+    icon: '💼',
+    categories: [
+      { id: 'business-documents', name: '证件文件', icon: '📄' },
+      { id: 'business-clothes', name: '正装衣物', icon: '👔' },
+      { id: 'business-electronics', name: '电子设备', icon: '💻' },
+      { id: 'business-toiletries', name: '洗漱用品', icon: '🧴' }
+    ],
+    items: [
+      { id: 'business-1', name: '身份证', categoryId: 'business-documents' },
+      { id: 'business-2', name: '名片', categoryId: 'business-documents' },
+      { id: 'business-3', name: '机票行程单', categoryId: 'business-documents' },
+      { id: 'business-4', name: '酒店预订确认单', categoryId: 'business-documents' },
+      { id: 'business-5', name: '笔记本电脑', categoryId: 'business-electronics' },
+      { id: 'business-6', name: '电脑充电器', categoryId: 'business-electronics' },
+      { id: 'business-7', name: '手机', categoryId: 'business-electronics' },
+      { id: 'business-8', name: '手机充电器', categoryId: 'business-electronics' },
+      { id: 'business-9', name: '移动电源', categoryId: 'business-electronics' },
+      { id: 'business-10', name: '耳机', categoryId: 'business-electronics' },
+      { id: 'business-11', name: 'U盘', categoryId: 'business-electronics' },
+      { id: 'business-12', name: '西装套装 x2', categoryId: 'business-clothes' },
+      { id: 'business-13', name: '衬衫 x4', categoryId: 'business-clothes' },
+      { id: 'business-14', name: '领带 x3', categoryId: 'business-clothes' },
+      { id: 'business-15', name: '皮带', categoryId: 'business-clothes' },
+      { id: 'business-16', name: '皮鞋', categoryId: 'business-clothes' },
+      { id: 'business-17', name: '休闲装', categoryId: 'business-clothes' },
+      { id: 'business-18', name: '内衣裤 x5', categoryId: 'business-clothes' },
+      { id: 'business-19', name: '牙刷牙膏', categoryId: 'business-toiletries' },
+      { id: 'business-20', name: '洗面奶', categoryId: 'business-toiletries' },
+      { id: 'business-21', name: '剃须刀', categoryId: 'business-toiletries' },
+      { id: 'business-22', name: '护肤品', categoryId: 'business-toiletries' }
+    ]
+  }
+];
