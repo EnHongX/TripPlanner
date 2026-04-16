@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import './App.css';
 
-// 直接在文件中定义类型
 interface Activity {
   id: string;
   title: string;
@@ -27,7 +26,6 @@ interface TripPlan {
   totalBudget: number;
 }
 
-// 直接在文件中定义假数据
 const mockTripPlan: TripPlan = {
   id: '1',
   name: '东京旅行',
@@ -132,6 +130,11 @@ function App() {
   const [tripPlan, setTripPlan] = useState<TripPlan>(mockTripPlan);
   const [selectedDay, setSelectedDay] = useState<DayPlan>(tripPlan.days[0]);
   const [showAddActivityForm, setShowAddActivityForm] = useState(false);
+  const [showEditActivityForm, setShowEditActivityForm] = useState(false);
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [showDeleteDayConfirm, setShowDeleteDayConfirm] = useState(false);
+  const [showDeleteActivityConfirm, setShowDeleteActivityConfirm] = useState<string | null>(null);
+
   const [newActivity, setNewActivity] = useState<Omit<Activity, 'id'>>({
     title: '',
     description: '',
@@ -141,28 +144,37 @@ function App() {
     budget: 0
   });
 
-  // 检查时间冲突
-  const checkTimeConflict = (startTime: string, endTime: string): boolean => {
+  const [editingActivity, setEditingActivity] = useState<Activity>({
+    id: '',
+    title: '',
+    description: '',
+    startTime: '',
+    endTime: '',
+    location: '',
+    budget: 0
+  });
+
+  const checkTimeConflict = (startTime: string, endTime: string, excludeActivityId?: string): boolean => {
     const newStart = new Date(`2000-01-01 ${startTime}`);
     const newEnd = new Date(`2000-01-01 ${endTime}`);
 
     return selectedDay.activities.some(activity => {
+      if (excludeActivityId && activity.id === excludeActivityId) {
+        return false;
+      }
       const existingStart = new Date(`2000-01-01 ${activity.startTime}`);
       const existingEnd = new Date(`2000-01-01 ${activity.endTime}`);
 
-      // 检查时间是否重叠
       return (newStart < existingEnd && newEnd > existingStart);
     });
   };
 
-  // 添加活动
   const handleAddActivity = () => {
     if (!newActivity.title || !newActivity.startTime || !newActivity.endTime) {
       alert('请填写活动标题和时间');
       return;
     }
 
-    // 检查时间冲突
     if (checkTimeConflict(newActivity.startTime, newActivity.endTime)) {
       alert('该时间段已存在活动，请调整时间');
       return;
@@ -201,7 +213,67 @@ function App() {
     setShowAddActivityForm(false);
   };
 
-  // 添加新的一天
+  const handleEditActivity = (activity: Activity) => {
+    setEditingActivity({ ...activity });
+    setEditingActivityId(activity.id);
+    setShowEditActivityForm(true);
+  };
+
+  const handleSaveEditActivity = () => {
+    if (!editingActivity.title || !editingActivity.startTime || !editingActivity.endTime) {
+      alert('请填写活动标题和时间');
+      return;
+    }
+
+    if (checkTimeConflict(editingActivity.startTime, editingActivity.endTime, editingActivityId || undefined)) {
+      alert('该时间段已存在活动，请调整时间');
+      return;
+    }
+
+    const updatedDays = tripPlan.days.map(day => {
+      if (day.id === selectedDay.id) {
+        return {
+          ...day,
+          activities: day.activities.map(act => 
+            act.id === editingActivityId ? editingActivity : act
+          )
+        };
+      }
+      return day;
+    });
+
+    const updatedTripPlan = {
+      ...tripPlan,
+      days: updatedDays
+    };
+
+    setTripPlan(updatedTripPlan);
+    setSelectedDay(updatedDays.find(day => day.id === selectedDay.id)!);
+    setShowEditActivityForm(false);
+    setEditingActivityId(null);
+  };
+
+  const handleDeleteActivity = (activityId: string) => {
+    const updatedDays = tripPlan.days.map(day => {
+      if (day.id === selectedDay.id) {
+        return {
+          ...day,
+          activities: day.activities.filter(act => act.id !== activityId)
+        };
+      }
+      return day;
+    });
+
+    const updatedTripPlan = {
+      ...tripPlan,
+      days: updatedDays
+    };
+
+    setTripPlan(updatedTripPlan);
+    setSelectedDay(updatedDays.find(day => day.id === selectedDay.id)!);
+    setShowDeleteActivityConfirm(null);
+  };
+
   const handleAddDay = () => {
     const lastDay = tripPlan.days[tripPlan.days.length - 1];
     const lastDate = new Date(lastDay.date);
@@ -225,14 +297,29 @@ function App() {
     setSelectedDay(newDay);
   };
 
-  // 计算总预算
+  const handleDeleteDay = () => {
+    if (tripPlan.days.length <= 1) {
+      alert('至少需要保留一天行程');
+      return;
+    }
+
+    const updatedDays = tripPlan.days.filter(day => day.id !== selectedDay.id);
+    const updatedTripPlan = {
+      ...tripPlan,
+      days: updatedDays
+    };
+
+    setTripPlan(updatedTripPlan);
+    setSelectedDay(updatedDays[0]);
+    setShowDeleteDayConfirm(false);
+  };
+
   const calculateTotalBudget = (): number => {
     return tripPlan.days.reduce((total, day) => {
       return total + day.activities.reduce((dayTotal, activity) => dayTotal + activity.budget, 0);
     }, 0);
   };
 
-  // 计算当日预算
   const calculateDayBudget = (): number => {
     return selectedDay.activities.reduce((sum, activity) => sum + activity.budget, 0);
   };
@@ -242,7 +329,6 @@ function App() {
 
   return (
     <div className="app">
-      {/* 顶部导航栏 */}
       <header className="header">
         <h1>{tripPlan.name}</h1>
         <div className="trip-dates">
@@ -251,7 +337,6 @@ function App() {
       </header>
 
       <div className="main-content">
-        {/* 左侧日期选择 */}
         <aside className="sidebar">
           <h2>行程日期</h2>
           <div className="day-list">
@@ -261,16 +346,20 @@ function App() {
                 className={`day-item ${selectedDay.id === day.id ? 'active' : ''}`}
                 onClick={() => setSelectedDay(day)}
               >
-                <span className="day-date">{day.date}</span>
-                <span className="activity-count">{day.activities.length} 个活动</span>
-                <span className="day-budget">¥{day.activities.reduce((sum, activity) => sum + activity.budget, 0)}</span>
+                <div className="day-item-content">
+                  <span className="day-date">{day.date}</span>
+                  <span className="activity-count">{day.activities.length} 个活动</span>
+                  <span className="day-budget">¥{day.activities.reduce((sum, activity) => sum + activity.budget, 0)}</span>
+                </div>
               </div>
             ))}
           </div>
-          <button className="add-day-btn" onClick={handleAddDay}>添加新的一天</button>
+          <div className="sidebar-actions">
+            <button className="add-day-btn" onClick={handleAddDay}>添加新的一天</button>
+            <button className="delete-day-btn" onClick={() => setShowDeleteDayConfirm(true)}>删除当天</button>
+          </div>
         </aside>
 
-        {/* 右侧行程详情 */}
         <main className="content">
           <div className="day-header">
             <h2>第 {tripPlan.days.indexOf(selectedDay) + 1} 天</h2>
@@ -293,12 +382,88 @@ function App() {
                     <div className="activity-location">{activity.location}</div>
                   </div>
                   <div className="activity-budget">¥{activity.budget}</div>
+                  <div className="activity-actions">
+                    <button 
+                      className="edit-btn" 
+                      onClick={() => handleEditActivity(activity)}
+                      title="编辑活动"
+                    >
+                      编辑
+                    </button>
+                    <button 
+                      className="delete-btn" 
+                      onClick={() => setShowDeleteActivityConfirm(activity.id)}
+                      title="删除活动"
+                    >
+                      删除
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </div>
 
-          {showAddActivityForm ? (
+          {showEditActivityForm ? (
+            <div className="edit-activity-form">
+              <h3>编辑活动</h3>
+              <div className="form-group">
+                <label>活动标题</label>
+                <input
+                  type="text"
+                  value={editingActivity.title}
+                  onChange={(e) => setEditingActivity({ ...editingActivity, title: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>活动描述</label>
+                <textarea
+                  value={editingActivity.description}
+                  onChange={(e) => setEditingActivity({ ...editingActivity, description: e.target.value })}
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>开始时间</label>
+                  <input
+                    type="time"
+                    value={editingActivity.startTime}
+                    onChange={(e) => setEditingActivity({ ...editingActivity, startTime: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>结束时间</label>
+                  <input
+                    type="time"
+                    value={editingActivity.endTime}
+                    onChange={(e) => setEditingActivity({ ...editingActivity, endTime: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>地点</label>
+                <input
+                  type="text"
+                  value={editingActivity.location}
+                  onChange={(e) => setEditingActivity({ ...editingActivity, location: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>预算</label>
+                <input
+                  type="number"
+                  value={editingActivity.budget}
+                  onChange={(e) => setEditingActivity({ ...editingActivity, budget: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="form-actions">
+                <button className="cancel-btn" onClick={() => {
+                  setShowEditActivityForm(false);
+                  setEditingActivityId(null);
+                }}>取消</button>
+                <button className="save-btn" onClick={handleSaveEditActivity}>保存</button>
+              </div>
+            </div>
+          ) : showAddActivityForm ? (
             <div className="add-activity-form">
               <h3>添加活动</h3>
               <div className="form-group">
@@ -360,7 +525,6 @@ function App() {
           )}
         </main>
 
-        {/* 右侧预算汇总 */}
         <aside className="budget-sidebar">
           <h2>预算汇总</h2>
           <div className="budget-item">
@@ -377,6 +541,32 @@ function App() {
           </div>
         </aside>
       </div>
+
+      {showDeleteDayConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteDayConfirm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除当天的所有行程吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteDayConfirm(false)}>取消</button>
+              <button className="delete-btn" onClick={handleDeleteDay}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteActivityConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteActivityConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这个活动吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteActivityConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteActivity(showDeleteActivityConfirm!)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
