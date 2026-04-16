@@ -14,6 +14,7 @@ const initialReviewList: ReviewList = JSON.parse(JSON.stringify(mockReviewList))
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('itinerary');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [tripPlan, setTripPlan] = useState<TripPlan>(initialTripPlan);
   const [selectedDay, setSelectedDay] = useState<DayPlan>(initialTripPlan.days[0]);
   const [packingList, setPackingList] = useState<PackingList>(initialPackingList);
@@ -2992,14 +2993,8 @@ function App() {
           >
             物品清单
             {getUnpackedCount() > 0 && (
-              <span className="unpacked-badge">{getUnpackedCount()}</span>
+              <span className="nav-badge">{getUnpackedCount()}</span>
             )}
-          </button>
-          <button
-            className={`nav-btn ${currentPage === 'templates' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('templates')}
-          >
-            清单模板
           </button>
           <button
             className={`nav-btn ${currentPage === 'travel' ? 'active' : ''}`}
@@ -3013,15 +3008,41 @@ function App() {
           >
             提醒待办
             {getIncompleteRemindersCount() > 0 && (
-              <span className="unpacked-badge">{getIncompleteRemindersCount()}</span>
+              <span className="nav-badge">{getIncompleteRemindersCount()}</span>
             )}
           </button>
-          <button
-            className={`nav-btn ${currentPage === 'reviews' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('reviews')}
-          >
-            旅行回顾
-          </button>
+          <div className="more-menu-container">
+            <button
+              className={`nav-btn more-btn ${
+                currentPage === 'templates' || currentPage === 'reviews' ? 'active' : ''
+              }`}
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+            >
+              更多 ▼
+            </button>
+            {showMoreMenu && (
+              <div className="more-menu-dropdown">
+                <button
+                  className={`more-menu-item ${currentPage === 'templates' ? 'active' : ''}`}
+                  onClick={() => {
+                    setCurrentPage('templates');
+                    setShowMoreMenu(false);
+                  }}
+                >
+                  清单模板
+                </button>
+                <button
+                  className={`more-menu-item ${currentPage === 'reviews' ? 'active' : ''}`}
+                  onClick={() => {
+                    setCurrentPage('reviews');
+                    setShowMoreMenu(false);
+                  }}
+                >
+                  旅行回顾
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="trip-dates">
           <span>{tripPlan.startDate}</span> - <span>{tripPlan.endDate}</span>
