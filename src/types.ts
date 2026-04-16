@@ -40,6 +40,7 @@ export interface PackingList {
   id: string;
   tripId: string;
   items: PackingItem[];
+  categories: PackingCategory[];
 }
 
 export interface TemplateCategory {
