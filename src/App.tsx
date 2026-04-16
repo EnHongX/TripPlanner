@@ -3463,9 +3463,9 @@ function App() {
               )}
             </div>
           </div>
-          <div className="trip-dates">
+          {/* <div className="trip-dates">
             <span>{tripPlan.startDate}</span> - <span>{tripPlan.endDate}</span>
-          </div>
+          </div> */}
         </header>
       ) : (
         <header className="header projects-header">
