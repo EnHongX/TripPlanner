@@ -1,4 +1,4 @@
-import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate, TravelInfo, Transportation, Accommodation, Reminder, ReminderList, DayReview, PhotoNote, ReviewList } from './types';
+import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate, TravelInfo, Transportation, Accommodation, Reminder, ReminderList, DayReview, PhotoNote, ReviewList, TripProject } from './types';
 
 export const packingCategories: PackingCategory[] = [
   { id: 'documents', name: '证件', icon: '📄' },
