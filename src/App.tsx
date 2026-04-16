@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
-import { mockPackingList, mockTripPlan, packingTemplates, mockTravelInfo, mockReminderList, mockReviewList, mockTripProjects, packingCategories } from './data';
-import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType, Reminder, ReminderList, ReminderType, ReviewList, DayReview, PhotoNote, TripProject } from './types';
+import { mockPackingList, mockTripPlan, mockTravelInfo, mockReminderList, mockReviewList, packingCategories } from './data';
+import { storage, initializeData } from './storage';
+import type { PackingItem, PackingList, PackingCategory, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType, Reminder, ReminderList, ReminderType, ReviewList, DayReview, PhotoNote, TripProject } from './types';
 
 type PageType = 'projects' | 'itinerary' | 'packing' | 'templates' | 'travel' | 'reminders' | 'reviews';
 
-const initialTemplates: PackingTemplate[] = JSON.parse(JSON.stringify(packingTemplates));
-
 function App() {
-  const [projects, setProjects] = useState<TripProject[]>(JSON.parse(JSON.stringify(mockTripProjects)));
+  const [projects, setProjects] = useState<TripProject[]>([]);
+  const [templates, setTemplates] = useState<PackingTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<PageType>('projects');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -49,7 +50,6 @@ function App() {
     budget: 0
   });
 
-  const [templates, setTemplates] = useState<PackingTemplate[]>(initialTemplates);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [showEditTemplate, setShowEditTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PackingTemplate | null>(null);
@@ -205,6 +205,37 @@ function App() {
     { value: '❄️', label: '雪天' },
     { value: '🌤️', label: '晴转多云' }
   ];
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const { projects: loadedProjects, templates: loadedTemplates } = await initializeData();
+        setProjects(loadedProjects);
+        setTemplates(loadedTemplates);
+      } catch (error) {
+        console.error('Failed to initialize data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && projects.length > 0) {
+      storage.saveProjects(projects).catch(error => {
+        console.error('Failed to save projects:', error);
+      });
+    }
+  }, [projects, isLoading]);
+
+  useEffect(() => {
+    if (!isLoading && templates.length > 0) {
+      storage.saveTemplates(templates).catch(error => {
+        console.error('Failed to save templates:', error);
+      });
+    }
+  }, [templates, isLoading]);
 
   const handleSwitchProject = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
@@ -555,17 +586,15 @@ function App() {
     setEditedTotalBudget(sanitizedValue);
   };
 
-  type ActivityWithBudget = { budget: number } & Record<string, unknown>;
-
-  const handleActivityBudgetInputChange = (
+  const handleActivityBudgetInputChange = <T extends { budget: number }>(
     e: React.ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<ActivityWithBudget>>,
-    state: ActivityWithBudget
+    setter: React.Dispatch<React.SetStateAction<T>>,
+    state: T
   ) => {
     const value = e.target.value;
     const sanitizedValue = sanitizeBudgetInput(value);
     const budgetValue = parseInt(sanitizedValue) || 0;
-    setter({ ...state, budget: budgetValue } as ActivityWithBudget);
+    setter({ ...state, budget: budgetValue });
   };
 
   const handleStartEditingBudget = () => {
