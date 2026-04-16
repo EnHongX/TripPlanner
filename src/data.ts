@@ -1,4 +1,4 @@
-import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate, TravelInfo, Transportation, Accommodation, Reminder, ReminderList } from './types';
+import type { TripPlan, PackingItem, PackingCategory, PackingList, PackingTemplate, TravelInfo, Transportation, Accommodation, Reminder, ReminderList, DayReview, PhotoNote, ReviewList } from './types';
 
 export const packingCategories: PackingCategory[] = [
   { id: 'documents', name: '证件', icon: '📄' },
@@ -388,4 +388,63 @@ export const mockReminderList: ReminderList = {
   id: '1',
   tripId: '1',
   reminders: mockReminders
+};
+
+export const mockDayReviews: DayReview[] = [
+  {
+    id: 'rev1',
+    date: '2024-05-01',
+    content: '今天抵达东京，一切顺利。成田机场比想象中更大，入关效率很高。乘坐N\'EX成田特快到新宿站，然后步行到酒店，沿途欣赏了新宿的繁华街景。下午去了新宿御苑，公园里樱花还在盛开，非常漂亮。晚上在新宿站附近的居酒屋吃了晚餐，体验了当地的居酒屋文化。',
+    mood: '😊',
+    weather: '☀️',
+    createdAt: '2024-05-01',
+    updatedAt: '2024-05-01'
+  },
+  {
+    id: 'rev2',
+    date: '2024-05-02',
+    content: '今天天气很好，适合观光。上午去了明治神宫，在茂密的森林中漫步，感受到了东京的宁静一面。然后去了原宿，沿着竹下通逛街，看到了很多独特的时尚风格。中午在原宿吃了有名的拉面。下午去涩谷，在十字路口看人来人往，真的很震撼。晚上在涩谷的一家烧肉店吃了晚餐。',
+    mood: '😄',
+    weather: '☀️',
+    createdAt: '2024-05-02',
+    updatedAt: '2024-05-02'
+  }
+];
+
+export const mockPhotoNotes: PhotoNote[] = [
+  {
+    id: 'photo1',
+    date: '2024-05-01',
+    imageUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Tokyo%20Narita%20Airport%20terminal%20building%20with%20clear%20sky&image_size=square_hd',
+    note: '成田机场T2航站楼，第一次来东京，心情有点激动。机场指示牌很清晰，不用担心迷路。',
+    createdAt: '2024-05-01'
+  },
+  {
+    id: 'photo2',
+    date: '2024-05-01',
+    imageUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cherry%20blossom%20in%20Shinjuku%20Gyoen%20park%20Tokyo%20spring&image_size=square_hd',
+    note: '新宿御苑的樱花，比想象中更美。公园里人不多，可以安静地欣赏樱花。',
+    createdAt: '2024-05-01'
+  },
+  {
+    id: 'photo3',
+    date: '2024-05-02',
+    imageUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Meiji%20Shrine%20torii%20gate%20in%20Tokyo%20forest&image_size=square_hd',
+    note: '明治神宫的大鸟居，非常壮观。走在森林里，完全感觉不到是在东京市中心。',
+    createdAt: '2024-05-02'
+  },
+  {
+    id: 'photo4',
+    date: '2024-05-02',
+    imageUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Shibuya%20crossing%20Tokyo%20busy%20intersection%20crowd&image_size=square_hd',
+    note: '涩谷十字路口，真的是世界最繁忙的路口之一。绿灯亮起时，四面八方的人同时过马路，场面很震撼。',
+    createdAt: '2024-05-02'
+  }
+];
+
+export const mockReviewList: ReviewList = {
+  id: '1',
+  tripId: '1',
+  reviews: mockDayReviews,
+  photoNotes: mockPhotoNotes
 };

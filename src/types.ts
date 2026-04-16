@@ -117,3 +117,28 @@ export interface ReminderList {
   tripId: string;
   reminders: Reminder[];
 }
+
+export interface PhotoNote {
+  id: string;
+  date: string;
+  imageUrl: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface DayReview {
+  id: string;
+  date: string;
+  content: string;
+  mood: string;
+  weather: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewList {
+  id: string;
+  tripId: string;
+  reviews: DayReview[];
+  photoNotes: PhotoNote[];
+}

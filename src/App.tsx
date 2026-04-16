@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import './App.css';
-import { mockPackingList, mockTripPlan, packingTemplates, mockTravelInfo, mockReminderList } from './data';
-import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType, Reminder, ReminderList, ReminderType } from './types';
+import { mockPackingList, mockTripPlan, packingTemplates, mockTravelInfo, mockReminderList, mockReviewList } from './data';
+import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType, Reminder, ReminderList, ReminderType, ReviewList, DayReview, PhotoNote } from './types';
 
-type PageType = 'itinerary' | 'packing' | 'templates' | 'travel' | 'reminders';
+type PageType = 'itinerary' | 'packing' | 'templates' | 'travel' | 'reminders' | 'reviews';
 
 const initialTripPlan: TripPlan = mockTripPlan;
 const initialPackingList: PackingList = mockPackingList;
 const initialTemplates: PackingTemplate[] = JSON.parse(JSON.stringify(packingTemplates));
 const initialTravelInfo: TravelInfo = JSON.parse(JSON.stringify(mockTravelInfo));
 const initialReminderList: ReminderList = JSON.parse(JSON.stringify(mockReminderList));
+const initialReviewList: ReviewList = JSON.parse(JSON.stringify(mockReviewList));
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('itinerary');
@@ -137,6 +138,63 @@ function App() {
     date: '',
     time: ''
   });
+
+  const [reviewList, setReviewList] = useState<ReviewList>(initialReviewList);
+  const [selectedReviewDate, setSelectedReviewDate] = useState<string>(tripPlan.days[0]?.date || '');
+  const [showAddReviewForm, setShowAddReviewForm] = useState(false);
+  const [showEditReviewForm, setShowEditReviewForm] = useState(false);
+  const [showDeleteReviewConfirm, setShowDeleteReviewConfirm] = useState<string | null>(null);
+  const [showAddPhotoForm, setShowAddPhotoForm] = useState(false);
+  const [showEditPhotoForm, setShowEditPhotoForm] = useState(false);
+  const [showDeletePhotoConfirm, setShowDeletePhotoConfirm] = useState<string | null>(null);
+  
+  const [newReview, setNewReview] = useState<Omit<DayReview, 'id' | 'createdAt' | 'updatedAt'>>({
+    date: '',
+    content: '',
+    mood: '😊',
+    weather: '☀️'
+  });
+
+  const [editingReview, setEditingReview] = useState<DayReview>({
+    id: '',
+    date: '',
+    content: '',
+    mood: '😊',
+    weather: '☀️',
+    createdAt: '',
+    updatedAt: ''
+  });
+
+  const [newPhotoNote, setNewPhotoNote] = useState<Omit<PhotoNote, 'id' | 'createdAt'>>({
+    date: '',
+    imageUrl: '',
+    note: ''
+  });
+
+  const [editingPhotoNote, setEditingPhotoNote] = useState<PhotoNote>({
+    id: '',
+    date: '',
+    imageUrl: '',
+    note: '',
+    createdAt: ''
+  });
+
+  const moodOptions = [
+    { value: '😊', label: '开心' },
+    { value: '😄', label: '兴奋' },
+    { value: '😌', label: '平静' },
+    { value: '😴', label: '疲惫' },
+    { value: '😢', label: '难过' },
+    { value: '😤', label: '生气' }
+  ];
+
+  const weatherOptions = [
+    { value: '☀️', label: '晴天' },
+    { value: '⛅', label: '多云' },
+    { value: '🌧️', label: '雨天' },
+    { value: '❄️', label: '雪天' },
+    { value: '🌤️', label: '晴转多云' }
+  ];
 
   const checkTimeConflict = (startTime: string, endTime: string, excludeActivityId?: string): boolean => {
     const newStart = new Date(`2000-01-01 ${startTime}`);
@@ -808,6 +866,121 @@ function App() {
 
   const getIncompleteRemindersCount = (): number => {
     return reminderList.reminders.filter(reminder => !reminder.isCompleted).length;
+  };
+
+  const getReviewByDate = (date: string): DayReview | undefined => {
+    return reviewList.reviews.find(review => review.date === date);
+  };
+
+  const getPhotosByDate = (date: string): PhotoNote[] => {
+    return reviewList.photoNotes.filter(photo => photo.date === date);
+  };
+
+  const getReviewsCount = (): number => {
+    return reviewList.reviews.length;
+  };
+
+  const getPhotosCount = (): number => {
+    return reviewList.photoNotes.length;
+  };
+
+  const handleAddReview = () => {
+    if (!newReview.content.trim()) {
+      alert('请填写回顾内容');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const review: DayReview = {
+      ...newReview,
+      id: `rev${Date.now()}`,
+      createdAt: today,
+      updatedAt: today
+    };
+
+    const updatedReviews = [...reviewList.reviews, review];
+    setReviewList({ ...reviewList, reviews: updatedReviews });
+    setNewReview({
+      date: '',
+      content: '',
+      mood: '😊',
+      weather: '☀️'
+    });
+    setShowAddReviewForm(false);
+  };
+
+  const handleEditReview = (review: DayReview) => {
+    setEditingReview({ ...review });
+    setShowEditReviewForm(true);
+  };
+
+  const handleSaveEditReview = () => {
+    if (!editingReview.content.trim()) {
+      alert('请填写回顾内容');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const updatedReviews = reviewList.reviews.map(review =>
+      review.id === editingReview.id
+        ? { ...editingReview, updatedAt: today }
+        : review
+    );
+    setReviewList({ ...reviewList, reviews: updatedReviews });
+    setShowEditReviewForm(false);
+  };
+
+  const handleDeleteReview = (reviewId: string) => {
+    const updatedReviews = reviewList.reviews.filter(review => review.id !== reviewId);
+    setReviewList({ ...reviewList, reviews: updatedReviews });
+    setShowDeleteReviewConfirm(null);
+  };
+
+  const handleAddPhotoNote = () => {
+    if (!newPhotoNote.note.trim()) {
+      alert('请填写照片备注');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const photoNote: PhotoNote = {
+      ...newPhotoNote,
+      id: `photo${Date.now()}`,
+      createdAt: today
+    };
+
+    const updatedPhotoNotes = [...reviewList.photoNotes, photoNote];
+    setReviewList({ ...reviewList, photoNotes: updatedPhotoNotes });
+    setNewPhotoNote({
+      date: '',
+      imageUrl: '',
+      note: ''
+    });
+    setShowAddPhotoForm(false);
+  };
+
+  const handleEditPhotoNote = (photo: PhotoNote) => {
+    setEditingPhotoNote({ ...photo });
+    setShowEditPhotoForm(true);
+  };
+
+  const handleSaveEditPhotoNote = () => {
+    if (!editingPhotoNote.note.trim()) {
+      alert('请填写照片备注');
+      return;
+    }
+
+    const updatedPhotoNotes = reviewList.photoNotes.map(photo =>
+      photo.id === editingPhotoNote.id ? editingPhotoNote : photo
+    );
+    setReviewList({ ...reviewList, photoNotes: updatedPhotoNotes });
+    setShowEditPhotoForm(false);
+  };
+
+  const handleDeletePhotoNote = (photoId: string) => {
+    const updatedPhotoNotes = reviewList.photoNotes.filter(photo => photo.id !== photoId);
+    setReviewList({ ...reviewList, photoNotes: updatedPhotoNotes });
+    setShowDeletePhotoConfirm(null);
   };
 
   const getTravelTypeIcon = (type: TravelType): string => {
@@ -1747,6 +1920,452 @@ function App() {
     );
   };
 
+  const renderReviewsPage = () => {
+    const currentReview = getReviewByDate(selectedReviewDate);
+    const currentPhotos = getPhotosByDate(selectedReviewDate);
+
+    return (
+      <div className="main-content">
+        <aside className="sidebar">
+          <h2>旅行日期</h2>
+          <div className="day-list">
+            {tripPlan.days.map((day) => {
+              const hasReview = reviewList.reviews.some(r => r.date === day.date);
+              const hasPhotos = reviewList.photoNotes.some(p => p.date === day.date);
+              
+              return (
+                <div
+                  key={day.id}
+                  className={`day-item ${selectedReviewDate === day.date ? 'active' : ''}`}
+                  onClick={() => setSelectedReviewDate(day.date)}
+                >
+                  <div className="day-item-content">
+                    <span className="day-date">{day.date}</span>
+                    <span className="activity-count">
+                      {hasReview && '📝 有回顾'}
+                      {hasReview && hasPhotos && ' | '}
+                      {hasPhotos && '📷 有照片'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="sidebar-actions">
+            <button 
+              className="add-item-btn" 
+              onClick={() => {
+                setNewReview({ ...newReview, date: selectedReviewDate });
+                setShowAddReviewForm(true);
+              }}
+            >
+              添加回顾
+            </button>
+            <button 
+              className="add-item-btn" 
+              onClick={() => {
+                setNewPhotoNote({ ...newPhotoNote, date: selectedReviewDate });
+                setShowAddPhotoForm(true);
+              }}
+            >
+              添加照片备注
+            </button>
+          </div>
+        </aside>
+
+        <main className="content">
+          <div className="reviews-header">
+            <h2>旅行回顾 - {selectedReviewDate}</h2>
+          </div>
+
+          <div className="review-section">
+            <div className="section-header">
+              <h3>
+                <span className="category-icon">📝</span>
+                当日回顾
+              </h3>
+              {currentReview && !showEditReviewForm && (
+                <div className="section-actions">
+                  <button 
+                    className="edit-btn-small" 
+                    onClick={() => handleEditReview(currentReview)}
+                  >
+                    编辑
+                  </button>
+                  <button 
+                    className="delete-btn-small" 
+                    onClick={() => setShowDeleteReviewConfirm(currentReview.id)}
+                  >
+                    删除
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {currentReview ? (
+              <div className="review-card">
+                <div className="review-meta">
+                  <div className="review-mood-weather">
+                    <span className="review-mood">心情: {currentReview.mood}</span>
+                    <span className="review-weather">天气: {currentReview.weather}</span>
+                  </div>
+                  <div className="review-dates">
+                    <span className="review-date">创建于: {currentReview.createdAt}</span>
+                    {currentReview.updatedAt !== currentReview.createdAt && (
+                      <span className="review-date">更新于: {currentReview.updatedAt}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="review-content">
+                  <p>{currentReview.content}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="no-items">暂无当日回顾，点击左侧按钮添加</p>
+            )}
+          </div>
+
+          <div className="review-section">
+            <div className="section-header">
+              <h3>
+                <span className="category-icon">📷</span>
+                照片备注 ({currentPhotos.length})
+              </h3>
+            </div>
+
+            {currentPhotos.length === 0 ? (
+              <p className="no-items">暂无照片备注，点击左侧按钮添加</p>
+            ) : (
+              <div className="photo-grid">
+                {currentPhotos.map((photo) => (
+                  <div key={photo.id} className="photo-card">
+                    <div className="photo-image">
+                      <img src={photo.imageUrl} alt="旅行照片" />
+                    </div>
+                    <div className="photo-note-content">
+                      <p>{photo.note}</p>
+                    </div>
+                    <div className="photo-actions">
+                      <button 
+                        className="edit-btn-small" 
+                        onClick={() => handleEditPhotoNote(photo)}
+                      >
+                        编辑
+                      </button>
+                      <button 
+                        className="delete-btn-small" 
+                        onClick={() => setShowDeletePhotoConfirm(photo.id)}
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {showAddReviewForm && (
+            <div className="add-form-container">
+              <div className="add-review-form">
+                <h3>添加旅行回顾</h3>
+                <div className="form-group">
+                  <label>选择日期</label>
+                  <select
+                    value={newReview.date}
+                    onChange={(e) => setNewReview({ ...newReview, date: e.target.value })}
+                  >
+                    <option value="">请选择日期</option>
+                    {tripPlan.days.map((day) => (
+                      <option key={day.id} value={day.date}>{day.date}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>心情</label>
+                    <select
+                      value={newReview.mood}
+                      onChange={(e) => setNewReview({ ...newReview, mood: e.target.value })}
+                    >
+                      {moodOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.value} {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>天气</label>
+                    <select
+                      value={newReview.weather}
+                      onChange={(e) => setNewReview({ ...newReview, weather: e.target.value })}
+                    >
+                      {weatherOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.value} {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>回顾内容 *</label>
+                  <textarea
+                    value={newReview.content}
+                    onChange={(e) => setNewReview({ ...newReview, content: e.target.value })}
+                    placeholder="记录今天的旅行体验..."
+                    rows={6}
+                  />
+                </div>
+                <div className="form-actions">
+                  <button 
+                    className="cancel-btn" 
+                    onClick={() => {
+                      setShowAddReviewForm(false);
+                      setNewReview({
+                        date: '',
+                        content: '',
+                        mood: '😊',
+                        weather: '☀️'
+                      });
+                    }}
+                  >
+                    取消
+                  </button>
+                  <button className="save-btn" onClick={handleAddReview}>保存</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showEditReviewForm && (
+            <div className="add-form-container">
+              <div className="edit-review-form">
+                <h3>编辑旅行回顾</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>心情</label>
+                    <select
+                      value={editingReview.mood}
+                      onChange={(e) => setEditingReview({ ...editingReview, mood: e.target.value })}
+                    >
+                      {moodOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.value} {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>天气</label>
+                    <select
+                      value={editingReview.weather}
+                      onChange={(e) => setEditingReview({ ...editingReview, weather: e.target.value })}
+                    >
+                      {weatherOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.value} {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>回顾内容 *</label>
+                  <textarea
+                    value={editingReview.content}
+                    onChange={(e) => setEditingReview({ ...editingReview, content: e.target.value })}
+                    placeholder="记录今天的旅行体验..."
+                    rows={6}
+                  />
+                </div>
+                <div className="form-actions">
+                  <button 
+                    className="cancel-btn" 
+                    onClick={() => setShowEditReviewForm(false)}
+                  >
+                    取消
+                  </button>
+                  <button className="save-btn" onClick={handleSaveEditReview}>保存</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showAddPhotoForm && (
+            <div className="add-form-container">
+              <div className="add-photo-form">
+                <h3>添加照片备注</h3>
+                <div className="form-group">
+                  <label>关联日期</label>
+                  <select
+                    value={newPhotoNote.date}
+                    onChange={(e) => setNewPhotoNote({ ...newPhotoNote, date: e.target.value })}
+                  >
+                    <option value="">请选择日期</option>
+                    {tripPlan.days.map((day) => (
+                      <option key={day.id} value={day.date}>{day.date}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>照片 (模拟，不用真实上传)</label>
+                  <div className="photo-placeholder">
+                    <div className="photo-placeholder-content">
+                      <span className="photo-icon">📷</span>
+                      <p>演示模式：将使用示例图片</p>
+                      <p className="photo-hint">选择以下场景之一：</p>
+                      <div className="scene-options">
+                        <button 
+                          type="button"
+                          className={`scene-btn ${newPhotoNote.imageUrl.includes('landscape') ? 'active' : ''}`}
+                          onClick={() => setNewPhotoNote({ 
+                            ...newPhotoNote, 
+                            imageUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beautiful%20travel%20landscape%20scenery%20with%20mountains%20and%20lake&image_size=square_hd' 
+                          })}
+                        >
+                          🏔️ 风景
+                        </button>
+                        <button 
+                          type="button"
+                          className={`scene-btn ${newPhotoNote.imageUrl.includes('city') ? 'active' : ''}`}
+                          onClick={() => setNewPhotoNote({ 
+                            ...newPhotoNote, 
+                            imageUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20city%20street%20with%20people%20walking%20tourist%20travel&image_size=square_hd' 
+                          })}
+                        >
+                          🏙️ 城市
+                        </button>
+                        <button 
+                          type="button"
+                          className={`scene-btn ${newPhotoNote.imageUrl.includes('food') ? 'active' : ''}`}
+                          onClick={() => setNewPhotoNote({ 
+                            ...newPhotoNote, 
+                            imageUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=delicious%20local%20food%20cuisine%20travel%20dining&image_size=square_hd' 
+                          })}
+                        >
+                          🍜 美食
+                        </button>
+                        <button 
+                          type="button"
+                          className={`scene-btn ${newPhotoNote.imageUrl.includes('sunset') ? 'active' : ''}`}
+                          onClick={() => setNewPhotoNote({ 
+                            ...newPhotoNote, 
+                            imageUrl: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beautiful%20sunset%20beach%20ocean%20travel%20vacation&image_size=square_hd' 
+                          })}
+                        >
+                          🌅 日落
+                        </button>
+                      </div>
+                      {newPhotoNote.imageUrl && (
+                        <div className="selected-preview">
+                          <p className="preview-label">已选择：</p>
+                          <img src={newPhotoNote.imageUrl} alt="预览" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>照片备注 *</label>
+                  <textarea
+                    value={newPhotoNote.note}
+                    onChange={(e) => setNewPhotoNote({ ...newPhotoNote, note: e.target.value })}
+                    placeholder="记录这张照片的故事..."
+                    rows={4}
+                  />
+                </div>
+                <div className="form-actions">
+                  <button 
+                    className="cancel-btn" 
+                    onClick={() => {
+                      setShowAddPhotoForm(false);
+                      setNewPhotoNote({
+                        date: '',
+                        imageUrl: '',
+                        note: ''
+                      });
+                    }}
+                  >
+                    取消
+                  </button>
+                  <button className="save-btn" onClick={handleAddPhotoNote}>保存</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showEditPhotoForm && (
+            <div className="add-form-container">
+              <div className="edit-photo-form">
+                <h3>编辑照片备注</h3>
+                <div className="form-group">
+                  <label>当前照片</label>
+                  <div className="photo-preview-edit">
+                    <img src={editingPhotoNote.imageUrl} alt="照片预览" />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>照片备注 *</label>
+                  <textarea
+                    value={editingPhotoNote.note}
+                    onChange={(e) => setEditingPhotoNote({ ...editingPhotoNote, note: e.target.value })}
+                    placeholder="记录这张照片的故事..."
+                    rows={4}
+                  />
+                </div>
+                <div className="form-actions">
+                  <button 
+                    className="cancel-btn" 
+                    onClick={() => setShowEditPhotoForm(false)}
+                  >
+                    取消
+                  </button>
+                  <button className="save-btn" onClick={handleSaveEditPhotoNote}>保存</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+
+        <aside className="budget-sidebar">
+          <h2>回顾统计</h2>
+          <div className="stat-item">
+            <span>已写回顾</span>
+            <span className="stat-value">{getReviewsCount()}</span>
+          </div>
+          <div className="stat-item">
+            <span>照片数量</span>
+            <span className="stat-value">{getPhotosCount()}</span>
+          </div>
+          <div className="stat-item">
+            <span>行程天数</span>
+            <span className="stat-value">{tripPlan.days.length}</span>
+          </div>
+          <div className="stat-item progress-item">
+            <span>回顾完成率</span>
+            <div className="progress-bar-container">
+              <div
+                className="progress-bar"
+                style={{
+                  width: `${tripPlan.days.length > 0 
+                    ? (getReviewsCount() / tripPlan.days.length) * 100 
+                    : 0}%`
+                }}
+              ></div>
+            </div>
+            <span className="progress-text">
+              {tripPlan.days.length > 0 
+                ? Math.round((getReviewsCount() / tripPlan.days.length) * 100) 
+                : 0}%
+            </span>
+          </div>
+        </aside>
+      </div>
+    );
+  };
+
   const renderItineraryPage = () => (
     <div className="main-content">
       <aside className="sidebar">
@@ -2397,6 +3016,12 @@ function App() {
               <span className="unpacked-badge">{getIncompleteRemindersCount()}</span>
             )}
           </button>
+          <button
+            className={`nav-btn ${currentPage === 'reviews' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('reviews')}
+          >
+            旅行回顾
+          </button>
         </div>
         <div className="trip-dates">
           <span>{tripPlan.startDate}</span> - <span>{tripPlan.endDate}</span>
@@ -2411,7 +3036,9 @@ function App() {
         ? renderTemplatesPage()
         : currentPage === 'travel'
         ? renderTravelPage()
-        : renderRemindersPage()}
+        : currentPage === 'reminders'
+        ? renderRemindersPage()
+        : renderReviewsPage()}
 
       {showDeleteDayConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteDayConfirm(false)}>
@@ -2723,6 +3350,32 @@ function App() {
             <div className="modal-actions">
               <button className="cancel-btn" onClick={() => setShowDeleteReminderConfirm(null)}>取消</button>
               <button className="delete-btn" onClick={() => handleDeleteReminder(showDeleteReminderConfirm!)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteReviewConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteReviewConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这篇旅行回顾吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteReviewConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteReview(showDeleteReviewConfirm!)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeletePhotoConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeletePhotoConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这张照片备注吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeletePhotoConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeletePhotoNote(showDeletePhotoConfirm!)}>确认删除</button>
             </div>
           </div>
         </div>
