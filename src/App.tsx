@@ -134,6 +134,8 @@ function App() {
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [showDeleteDayConfirm, setShowDeleteDayConfirm] = useState(false);
   const [showDeleteActivityConfirm, setShowDeleteActivityConfirm] = useState<string | null>(null);
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [editedTotalBudget, setEditedTotalBudget] = useState<string>(tripPlan.totalBudget.toString());
 
   const [newActivity, setNewActivity] = useState<Omit<Activity, 'id'>>({
     title: '',
@@ -314,6 +316,56 @@ function App() {
     setShowDeleteDayConfirm(false);
   };
 
+  const sanitizeBudgetInput = (value: string): string => {
+    const cleanedValue = value.replace(/[^0-9]/g, '');
+    if (cleanedValue === '') return '';
+    if (cleanedValue.length > 1 && cleanedValue.startsWith('0')) {
+      return cleanedValue.replace(/^0+/, '') || '0';
+    }
+    return cleanedValue;
+  };
+
+  const handleBudgetInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const sanitizedValue = sanitizeBudgetInput(value);
+    setEditedTotalBudget(sanitizedValue);
+  };
+
+  const handleActivityBudgetInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: React.Dispatch<React.SetStateAction<any>>,
+    state: any
+  ) => {
+    const value = e.target.value;
+    const sanitizedValue = sanitizeBudgetInput(value);
+    const budgetValue = parseInt(sanitizedValue) || 0;
+    setter({ ...state, budget: budgetValue });
+  };
+
+  const handleStartEditingBudget = () => {
+    setEditedTotalBudget(tripPlan.totalBudget.toString());
+    setIsEditingBudget(true);
+  };
+
+  const handleSaveBudget = () => {
+    const budgetValue = parseInt(editedTotalBudget) || 0;
+    if (budgetValue < 0) {
+      alert('预算不能为负数');
+      return;
+    }
+    const updatedTripPlan = {
+      ...tripPlan,
+      totalBudget: budgetValue
+    };
+    setTripPlan(updatedTripPlan);
+    setIsEditingBudget(false);
+  };
+
+  const handleCancelBudgetEdit = () => {
+    setEditedTotalBudget(tripPlan.totalBudget.toString());
+    setIsEditingBudget(false);
+  };
+
   const calculateTotalBudget = (): number => {
     return tripPlan.days.reduce((total, day) => {
       return total + day.activities.reduce((dayTotal, activity) => dayTotal + activity.budget, 0);
@@ -450,9 +502,9 @@ function App() {
               <div className="form-group">
                 <label>预算</label>
                 <input
-                  type="number"
-                  value={editingActivity.budget}
-                  onChange={(e) => setEditingActivity({ ...editingActivity, budget: parseInt(e.target.value) || 0 })}
+                  type="text"
+                  value={editingActivity.budget.toString()}
+                  onChange={(e) => handleActivityBudgetInputChange(e, setEditingActivity, editingActivity)}
                 />
               </div>
               <div className="form-actions">
@@ -510,9 +562,9 @@ function App() {
               <div className="form-group">
                 <label>预算</label>
                 <input
-                  type="number"
-                  value={newActivity.budget}
-                  onChange={(e) => setNewActivity({ ...newActivity, budget: parseInt(e.target.value) || 0 })}
+                  type="text"
+                  value={newActivity.budget.toString()}
+                  onChange={(e) => handleActivityBudgetInputChange(e, setNewActivity, newActivity)}
                 />
               </div>
               <div className="form-actions">
@@ -529,15 +581,38 @@ function App() {
           <h2>预算汇总</h2>
           <div className="budget-item">
             <span>总预算</span>
-            <span className="budget-amount">¥{totalBudget}</span>
+            {isEditingBudget ? (
+              <div className="budget-edit-container">
+                <span>¥</span>
+                <input
+                  type="text"
+                  value={editedTotalBudget}
+                  onChange={handleBudgetInputChange}
+                  className="budget-input"
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <span className="budget-amount">¥{tripPlan.totalBudget}</span>
+            )}
           </div>
+          {isEditingBudget ? (
+            <div className="budget-edit-actions">
+              <button className="cancel-btn" onClick={handleCancelBudgetEdit}>取消</button>
+              <button className="save-btn" onClick={handleSaveBudget}>保存</button>
+            </div>
+          ) : (
+            <button className="edit-budget-btn" onClick={handleStartEditingBudget}>编辑总预算</button>
+          )}
           <div className="budget-item">
             <span>当日已使用</span>
             <span className="budget-amount">¥{dayBudget}</span>
           </div>
           <div className="budget-item">
             <span>总剩余</span>
-            <span className="budget-amount">¥{tripPlan.totalBudget - totalBudget}</span>
+            <span className={`budget-amount ${tripPlan.totalBudget - totalBudget < 0 ? 'budget-over' : ''}`}>
+              ¥{tripPlan.totalBudget - totalBudget}
+            </span>
           </div>
         </aside>
       </div>
