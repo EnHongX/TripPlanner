@@ -22,3 +22,22 @@ export interface TripPlan {
   days: DayPlan[];
   totalBudget: number;
 }
+
+export interface PackingItem {
+  id: string;
+  name: string;
+  category: string;
+  isPacked: boolean;
+}
+
+export interface PackingCategory {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+export interface PackingList {
+  id: string;
+  tripId: string;
+  items: PackingItem[];
+}
