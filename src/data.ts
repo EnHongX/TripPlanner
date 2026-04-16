@@ -289,7 +289,7 @@ export const mockTransportations: Transportation[] = [
   {
     id: 'trans2',
     type: 'train',
-    number: 'N'EX成田特快',
+    number: "N'EX成田特快",
     fromLocation: '成田机场',
     toLocation: '新宿站',
     departureTime: '2024-05-01 13:00',
