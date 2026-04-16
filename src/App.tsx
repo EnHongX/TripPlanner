@@ -502,11 +502,6 @@ function App() {
     const template = getTemplateById(templateId);
     if (!template) return;
 
-    const categoryMap: Record<string, string> = {};
-    template.categories.forEach(cat => {
-      categoryMap[cat.id] = cat.id;
-    });
-
     const newItems: PackingItem[] = template.items.map(item => ({
       id: `item${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: item.name,
@@ -516,7 +511,7 @@ function App() {
 
     setPackingList({
       ...packingList,
-      items: [...packingList.items, ...newItems]
+      items: newItems
     });
 
     setShowApplyTemplateConfirm(null);
@@ -918,52 +913,86 @@ function App() {
 
     return (
       <div className="main-content">
-        <aside className="sidebar">
-          <h2>清单模板</h2>
-          <div className="template-list">
-            {templates.map((template) => (
-              <div
-                key={template.id}
-                className={`template-item ${selectedTemplateId === template.id ? 'active' : ''}`}
-                onClick={() => setSelectedTemplateId(template.id)}
-              >
-                <div className="template-item-content">
-                  <span className="template-icon">{template.icon}</span>
-                  <span className="template-name">{template.name}</span>
-                  <span className="template-count">
-                    {template.items.length} 个物品
-                  </span>
-                </div>
-              </div>
-            ))}
+        <main className="content templates-main">
+          <div className="templates-page-header">
+            <h2>清单模板</h2>
+            <p className="templates-subtitle">选择或编辑一个模板，应用到您的旅行清单</p>
           </div>
-        </aside>
 
-        <main className="content">
-          {selectedTemplate ? (
+          {!selectedTemplate ? (
+            <div className="template-cards-grid">
+              {templates.map((template) => (
+                <div
+                  key={template.id}
+                  className="template-card"
+                  onClick={() => setSelectedTemplateId(template.id)}
+                >
+                  <div className="template-card-header">
+                    <span className="template-card-icon">{template.icon}</span>
+                    <h3 className="template-card-name">{template.name}</h3>
+                  </div>
+                  <p className="template-card-description">{template.description}</p>
+                  <div className="template-card-footer">
+                    <div className="template-card-stats">
+                      <span className="template-stat">
+                        <strong>{template.categories.length}</strong> 个类别
+                      </span>
+                      <span className="template-stat">
+                        <strong>{template.items.length}</strong> 个物品
+                      </span>
+                    </div>
+                    <div className="template-card-actions">
+                      <button
+                        className="template-card-btn edit-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditTemplate(template);
+                        }}
+                      >
+                        编辑
+                      </button>
+                      <button
+                        className="template-card-btn apply-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowApplyTemplateConfirm(template.id);
+                        }}
+                      >
+                        应用
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
             <>
-              <div className="template-header">
-                <div className="template-title-section">
-                  <span className="template-main-icon">{selectedTemplate.icon}</span>
+              <div className="template-detail-header">
+                <button
+                  className="back-btn"
+                  onClick={() => setSelectedTemplateId(null)}
+                >
+                  ← 返回模板列表
+                </button>
+                <div className="template-detail-info">
+                  <span className="template-detail-icon">{selectedTemplate.icon}</span>
                   <div>
                     <h2>{selectedTemplate.name}</h2>
                     <p className="template-description">{selectedTemplate.description}</p>
                   </div>
                 </div>
-                <div className="template-actions">
+                <div className="template-detail-actions">
                   <button
                     className="apply-btn"
                     onClick={() => setShowApplyTemplateConfirm(selectedTemplate.id)}
-                    title="应用到当前清单"
                   >
                     应用模板
                   </button>
                   <button
                     className="edit-btn"
                     onClick={() => handleEditTemplate(selectedTemplate)}
-                    title="编辑模板"
                   >
-                    编辑
+                    编辑模板
                   </button>
                 </div>
               </div>
@@ -973,8 +1002,6 @@ function App() {
                   const categoryItems = selectedTemplate.items.filter(
                     (item) => item.categoryId === category.id
                   );
-
-                  if (categoryItems.length === 0) return null;
 
                   return (
                     <div key={category.id} className="template-category">
@@ -988,7 +1015,7 @@ function App() {
                             {categoryItems.length} 个物品
                           </span>
                           <button
-                            className="item-edit-btn"
+                            className="template-edit-btn"
                             onClick={() => handleEditCategory(selectedTemplate.id, category)}
                             title="编辑类别"
                           >
@@ -1009,32 +1036,36 @@ function App() {
                         </div>
                       </div>
                       <div className="template-items">
-                        {categoryItems.map((item) => (
-                          <div key={item.id} className="template-item-row">
-                            <span className="item-name">{item.name}</span>
-                            <div className="item-actions">
-                              <button
-                                className="item-edit-btn"
-                                onClick={() => handleEditItem(selectedTemplate.id, item)}
-                                title="编辑物品"
-                              >
-                                编辑
-                              </button>
-                              <button
-                                className="item-delete-btn"
-                                onClick={() =>
-                                  setShowDeleteItemConfirmTemplate({
-                                    templateId: selectedTemplate.id,
-                                    itemId: item.id
-                                  })
-                                }
-                                title="删除物品"
-                              >
-                                删除
-                              </button>
+                        {categoryItems.length === 0 ? (
+                          <p className="no-items-in-category">暂无物品，点击下方按钮添加</p>
+                        ) : (
+                          categoryItems.map((item) => (
+                            <div key={item.id} className="template-item-row">
+                              <span className="item-name">{item.name}</span>
+                              <div className="item-actions">
+                                <button
+                                  className="template-edit-btn"
+                                  onClick={() => handleEditItem(selectedTemplate.id, item)}
+                                  title="编辑物品"
+                                >
+                                  编辑
+                                </button>
+                                <button
+                                  className="item-delete-btn"
+                                  onClick={() =>
+                                    setShowDeleteItemConfirmTemplate({
+                                      templateId: selectedTemplate.id,
+                                      itemId: item.id
+                                    })
+                                  }
+                                  title="删除物品"
+                                >
+                                  删除
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     </div>
                   );
@@ -1062,10 +1093,6 @@ function App() {
                 </button>
               </div>
             </>
-          ) : (
-            <div className="no-template-selected">
-              <p>请从左侧选择一个模板查看详情</p>
-            </div>
           )}
         </main>
 
@@ -1085,7 +1112,6 @@ function App() {
                 const itemCount = selectedTemplate.items.filter(
                   (item) => item.categoryId === category.id
                 ).length;
-                if (itemCount === 0) return null;
                 return (
                   <div key={category.id} className="stat-item">
                     <span>
