@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import { packingCategories, mockPackingList, mockTripPlan, packingTemplates } from './data';
+import { mockPackingList, mockTripPlan, packingTemplates } from './data';
 import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem } from './types';
 
 type PageType = 'itinerary' | 'packing' | 'templates';
@@ -502,6 +502,12 @@ function App() {
     const template = getTemplateById(templateId);
     if (!template) return;
 
+    const newCategories: PackingCategory[] = template.categories.map(category => ({
+      id: category.id,
+      name: category.name,
+      icon: category.icon
+    }));
+
     const newItems: PackingItem[] = template.items.map(item => ({
       id: `item${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: item.name,
@@ -511,6 +517,7 @@ function App() {
 
     setPackingList({
       ...packingList,
+      categories: newCategories,
       items: newItems
     });
 
@@ -757,7 +764,7 @@ function App() {
       <aside className="sidebar">
         <h2>物品类别</h2>
         <div className="category-list">
-          {packingCategories.map((category) => (
+          {packingList.categories.map((category) => (
             <div
               key={category.id}
               className="category-item"
@@ -788,7 +795,7 @@ function App() {
         </div>
 
         <div className="packing-categories">
-          {packingCategories.map((category) => {
+          {packingList.categories.map((category) => {
             const categoryItems = packingList.items.filter(item => item.category === category.id);
             if (categoryItems.length === 0) return null;
 
@@ -860,7 +867,7 @@ function App() {
                 value={newItemCategory}
                 onChange={(e) => setNewItemCategory(e.target.value)}
               >
-                {packingCategories.map((category) => (
+                {packingList.categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.icon} {category.name}
                   </option>
