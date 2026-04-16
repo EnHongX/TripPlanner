@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import './App.css';
-import { mockPackingList, mockTripPlan, packingTemplates, mockTravelInfo } from './data';
-import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType } from './types';
+import { mockPackingList, mockTripPlan, packingTemplates, mockTravelInfo, mockReminderList } from './data';
+import type { PackingItem, PackingList, TripPlan, DayPlan, Activity, PackingTemplate, TemplateCategory, TemplateItem, TravelInfo, Accommodation, Transportation, TravelType, Reminder, ReminderList, ReminderType } from './types';
 
-type PageType = 'itinerary' | 'packing' | 'templates' | 'travel';
+type PageType = 'itinerary' | 'packing' | 'templates' | 'travel' | 'reminders';
 
 const initialTripPlan: TripPlan = mockTripPlan;
 const initialPackingList: PackingList = mockPackingList;
 const initialTemplates: PackingTemplate[] = JSON.parse(JSON.stringify(packingTemplates));
 const initialTravelInfo: TravelInfo = JSON.parse(JSON.stringify(mockTravelInfo));
+const initialReminderList: ReminderList = JSON.parse(JSON.stringify(mockReminderList));
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('itinerary');
@@ -66,6 +67,8 @@ function App() {
   const [editingItem, setEditingItem] = useState<{ templateId: string; item: TemplateItem } | null>(null);
 
   const [travelInfo, setTravelInfo] = useState<TravelInfo>(initialTravelInfo);
+  const [reminderList, setReminderList] = useState<ReminderList>(initialReminderList);
+  
   const [showAddAccommodationForm, setShowAddAccommodationForm] = useState(false);
   const [showAddTransportationForm, setShowAddTransportationForm] = useState(false);
   const [showEditAccommodationForm, setShowEditAccommodationForm] = useState(false);
@@ -121,6 +124,18 @@ function App() {
     seatNumber: '',
     bookingNumber: '',
     notes: ''
+  });
+
+  const [reminderFilterType, setReminderFilterType] = useState<ReminderType | 'all'>('all');
+  const [reminderFilterStatus, setReminderFilterStatus] = useState<'all' | 'completed' | 'incomplete'>('all');
+  const [showAddReminderForm, setShowAddReminderForm] = useState(false);
+  const [showDeleteReminderConfirm, setShowDeleteReminderConfirm] = useState<string | null>(null);
+  const [newReminder, setNewReminder] = useState<Omit<Reminder, 'id' | 'createdAt' | 'isCompleted'>>({
+    title: '',
+    description: '',
+    type: 'other',
+    date: '',
+    time: ''
   });
 
   const checkTimeConflict = (startTime: string, endTime: string, excludeActivityId?: string): boolean => {
@@ -702,6 +717,97 @@ function App() {
       transportations: travelInfo.transportations.filter(trans => trans.id !== id)
     });
     setShowDeleteTransportationConfirm(null);
+  };
+
+  const getReminderTypeIcon = (type: ReminderType): string => {
+    switch (type) {
+      case 'document': return '📄';
+      case 'booking': return '📅';
+      case 'packing': return '🎒';
+      case 'activity': return '📍';
+      case 'other': return '📝';
+      default: return '📝';
+    }
+  };
+
+  const getReminderTypeName = (type: ReminderType): string => {
+    switch (type) {
+      case 'document': return '证件文件';
+      case 'booking': return '预订确认';
+      case 'packing': return '打包准备';
+      case 'activity': return '活动安排';
+      case 'other': return '其他';
+      default: return '其他';
+    }
+  };
+
+  const handleToggleReminderCompleted = (reminderId: string) => {
+    const updatedReminders = reminderList.reminders.map(reminder =>
+      reminder.id === reminderId ? { ...reminder, isCompleted: !reminder.isCompleted } : reminder
+    );
+    setReminderList({ ...reminderList, reminders: updatedReminders });
+  };
+
+  const handleAddReminder = () => {
+    if (!newReminder.title.trim() || !newReminder.date) {
+      alert('请填写提醒标题和日期');
+      return;
+    }
+
+    const reminder: Reminder = {
+      ...newReminder,
+      id: `rem${Date.now()}`,
+      createdAt: new Date().toISOString().split('T')[0],
+      isCompleted: false
+    };
+
+    setReminderList({
+      ...reminderList,
+      reminders: [...reminderList.reminders, reminder]
+    });
+
+    setNewReminder({
+      title: '',
+      description: '',
+      type: 'other',
+      date: '',
+      time: ''
+    });
+    setShowAddReminderForm(false);
+  };
+
+  const handleDeleteReminder = (reminderId: string) => {
+    const updatedReminders = reminderList.reminders.filter(reminder => reminder.id !== reminderId);
+    setReminderList({ ...reminderList, reminders: updatedReminders });
+    setShowDeleteReminderConfirm(null);
+  };
+
+  const getFilteredReminders = (): Reminder[] => {
+    let filtered = [...reminderList.reminders];
+
+    if (reminderFilterType !== 'all') {
+      filtered = filtered.filter(reminder => reminder.type === reminderFilterType);
+    }
+
+    if (reminderFilterStatus === 'completed') {
+      filtered = filtered.filter(reminder => reminder.isCompleted);
+    } else if (reminderFilterStatus === 'incomplete') {
+      filtered = filtered.filter(reminder => !reminder.isCompleted);
+    }
+
+    return filtered.sort((a, b) => {
+      const dateA = new Date(`${a.date} ${a.time || '00:00'}`);
+      const dateB = new Date(`${b.date} ${b.time || '00:00'}`);
+      return dateA.getTime() - dateB.getTime();
+    });
+  };
+
+  const getCompletedRemindersCount = (): number => {
+    return reminderList.reminders.filter(reminder => reminder.isCompleted).length;
+  };
+
+  const getIncompleteRemindersCount = (): number => {
+    return reminderList.reminders.filter(reminder => !reminder.isCompleted).length;
   };
 
   const getTravelTypeIcon = (type: TravelType): string => {
@@ -1379,6 +1485,268 @@ function App() {
     </div>
   );
 
+  const renderRemindersPage = () => {
+    const filteredReminders = getFilteredReminders();
+    const reminderTypes: (ReminderType | 'all')[] = ['all', 'document', 'booking', 'packing', 'activity', 'other'];
+    const statusFilters: ('all' | 'completed' | 'incomplete')[] = ['all', 'completed', 'incomplete'];
+
+    return (
+      <div className="main-content">
+        <aside className="sidebar">
+          <h2>筛选条件</h2>
+          
+          <div className="filter-section">
+            <h3 className="filter-title">按类型筛选</h3>
+            <div className="filter-list">
+              {reminderTypes.map((type) => (
+                <div
+                  key={type}
+                  className={`filter-item ${reminderFilterType === type ? 'active' : ''}`}
+                  onClick={() => setReminderFilterType(type)}
+                >
+                  <div className="filter-item-content">
+                    <span className="filter-icon">
+                      {type === 'all' ? '📋' : getReminderTypeIcon(type)}
+                    </span>
+                    <span className="filter-name">
+                      {type === 'all' ? '全部类型' : getReminderTypeName(type)}
+                    </span>
+                    <span className="filter-count">
+                      {type === 'all' 
+                        ? reminderList.reminders.length 
+                        : reminderList.reminders.filter(r => r.type === type).length}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <h3 className="filter-title">按状态筛选</h3>
+            <div className="filter-list">
+              {statusFilters.map((status) => (
+                <div
+                  key={status}
+                  className={`filter-item ${reminderFilterStatus === status ? 'active' : ''}`}
+                  onClick={() => setReminderFilterStatus(status)}
+                >
+                  <div className="filter-item-content">
+                    <span className="filter-icon">
+                      {status === 'all' ? '📋' : status === 'completed' ? '✅' : '⏳'}
+                    </span>
+                    <span className="filter-name">
+                      {status === 'all' ? '全部状态' : status === 'completed' ? '已完成' : '未完成'}
+                    </span>
+                    <span className="filter-count">
+                      {status === 'all' 
+                        ? reminderList.reminders.length 
+                        : status === 'completed' 
+                          ? getCompletedRemindersCount() 
+                          : getIncompleteRemindersCount()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-actions">
+            <button className="add-item-btn" onClick={() => setShowAddReminderForm(true)}>添加提醒</button>
+          </div>
+        </aside>
+
+        <main className="content">
+          <div className="reminders-header">
+            <h2>旅行提醒与待办</h2>
+            <div className="reminders-stats">
+              <span className="reminders-progress">
+                已完成: <strong className="completed">{getCompletedRemindersCount()}</strong> / {reminderList.reminders.length}
+              </span>
+            </div>
+          </div>
+
+          {filteredReminders.length === 0 ? (
+            <div className="no-items">
+              <p>暂无符合条件的提醒事项</p>
+            </div>
+          ) : (
+            <div className="reminders-list">
+              {filteredReminders.map((reminder) => (
+                <div
+                  key={reminder.id}
+                  className={`reminder-card ${reminder.isCompleted ? 'completed' : ''}`}
+                >
+                  <div className="reminder-header">
+                    <input
+                      type="checkbox"
+                      checked={reminder.isCompleted}
+                      onChange={() => handleToggleReminderCompleted(reminder.id)}
+                      className="item-checkbox"
+                    />
+                    <div className="reminder-type-badge">
+                      <span className="category-icon">{getReminderTypeIcon(reminder.type)}</span>
+                      <span className="type-name">{getReminderTypeName(reminder.type)}</span>
+                    </div>
+                    <div className="reminder-datetime">
+                      <span className="reminder-date">{reminder.date}</span>
+                      {reminder.time && <span className="reminder-time">{reminder.time}</span>}
+                    </div>
+                  </div>
+                  <div className="reminder-content">
+                    <h4 className={`reminder-title ${reminder.isCompleted ? 'completed' : ''}`}>
+                      {reminder.title}
+                    </h4>
+                    {reminder.description && (
+                      <p className="reminder-description">{reminder.description}</p>
+                    )}
+                  </div>
+                  <div className="reminder-actions">
+                    <button
+                      className="delete-btn"
+                      onClick={() => setShowDeleteReminderConfirm(reminder.id)}
+                      title="删除提醒"
+                    >
+                      删除
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!showAddReminderForm && (
+            <button className="add-reminder-btn" onClick={() => setShowAddReminderForm(true)}>
+              + 添加新提醒
+            </button>
+          )}
+
+          {showAddReminderForm && (
+            <div className="add-reminder-form">
+              <h3>添加新提醒</h3>
+              <div className="form-group">
+                <label>提醒标题 *</label>
+                <input
+                  type="text"
+                  value={newReminder.title}
+                  onChange={(e) => setNewReminder({ ...newReminder, title: e.target.value })}
+                  placeholder="输入提醒标题"
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label>提醒描述</label>
+                <textarea
+                  value={newReminder.description}
+                  onChange={(e) => setNewReminder({ ...newReminder, description: e.target.value })}
+                  placeholder="输入提醒描述（可选）"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>提醒类型</label>
+                  <select
+                    value={newReminder.type}
+                    onChange={(e) => setNewReminder({ ...newReminder, type: e.target.value as ReminderType })}
+                  >
+                    <option value="document">📄 证件文件</option>
+                    <option value="booking">📅 预订确认</option>
+                    <option value="packing">🎒 打包准备</option>
+                    <option value="activity">📍 活动安排</option>
+                    <option value="other">📝 其他</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>提醒日期 *</label>
+                  <input
+                    type="date"
+                    value={newReminder.date}
+                    onChange={(e) => setNewReminder({ ...newReminder, date: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>提醒时间（可选）</label>
+                <input
+                  type="time"
+                  value={newReminder.time}
+                  onChange={(e) => setNewReminder({ ...newReminder, time: e.target.value })}
+                />
+              </div>
+              <div className="form-actions">
+                <button
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowAddReminderForm(false);
+                    setNewReminder({
+                      title: '',
+                      description: '',
+                      type: 'other',
+                      date: '',
+                      time: ''
+                    });
+                  }}
+                >
+                  取消
+                </button>
+                <button className="save-btn" onClick={handleAddReminder}>保存</button>
+              </div>
+            </div>
+          )}
+        </main>
+
+        <aside className="budget-sidebar">
+          <h2>提醒统计</h2>
+          <div className="stat-item">
+            <span>总提醒数</span>
+            <span className="stat-value">{reminderList.reminders.length}</span>
+          </div>
+          <div className="stat-item">
+            <span>已完成</span>
+            <span className="stat-value packed">{getCompletedRemindersCount()}</span>
+          </div>
+          <div className="stat-item">
+            <span>未完成</span>
+            <span className="stat-value unpacked">{getIncompleteRemindersCount()}</span>
+          </div>
+          <div className="stat-item progress-item">
+            <span>完成进度</span>
+            <div className="progress-bar-container">
+              <div
+                className="progress-bar"
+                style={{
+                  width: `${reminderList.reminders.length > 0 
+                    ? (getCompletedRemindersCount() / reminderList.reminders.length) * 100 
+                    : 0}%`
+                }}
+              ></div>
+            </div>
+            <span className="progress-text">
+              {reminderList.reminders.length > 0 
+                ? Math.round((getCompletedRemindersCount() / reminderList.reminders.length) * 100) 
+                : 0}%
+            </span>
+          </div>
+          <div className="reminder-types-stats">
+            <h3>类型分布</h3>
+            {(['document', 'booking', 'packing', 'activity', 'other'] as ReminderType[]).map((type) => {
+              const count = reminderList.reminders.filter(r => r.type === type).length;
+              if (count === 0) return null;
+              return (
+                <div key={type} className="stat-item">
+                  <span>
+                    {getReminderTypeIcon(type)} {getReminderTypeName(type)}
+                  </span>
+                  <span className="stat-value">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+      </div>
+    );
+  };
+
   const renderItineraryPage = () => (
     <div className="main-content">
       <aside className="sidebar">
@@ -2020,6 +2388,15 @@ function App() {
           >
             住宿交通
           </button>
+          <button
+            className={`nav-btn ${currentPage === 'reminders' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('reminders')}
+          >
+            提醒待办
+            {getIncompleteRemindersCount() > 0 && (
+              <span className="unpacked-badge">{getIncompleteRemindersCount()}</span>
+            )}
+          </button>
         </div>
         <div className="trip-dates">
           <span>{tripPlan.startDate}</span> - <span>{tripPlan.endDate}</span>
@@ -2032,7 +2409,9 @@ function App() {
         ? renderPackingPage()
         : currentPage === 'templates'
         ? renderTemplatesPage()
-        : renderTravelPage()}
+        : currentPage === 'travel'
+        ? renderTravelPage()
+        : renderRemindersPage()}
 
       {showDeleteDayConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteDayConfirm(false)}>
@@ -2331,6 +2710,19 @@ function App() {
             <div className="modal-actions">
               <button className="cancel-btn" onClick={() => setShowDeleteTransportationConfirm(null)}>取消</button>
               <button className="delete-btn" onClick={() => handleDeleteTransportation(showDeleteTransportationConfirm!)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteReminderConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteReminderConfirm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>确认删除</h3>
+            <p>确定要删除这条提醒吗？此操作不可撤销。</p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowDeleteReminderConfirm(null)}>取消</button>
+              <button className="delete-btn" onClick={() => handleDeleteReminder(showDeleteReminderConfirm!)}>确认删除</button>
             </div>
           </div>
         </div>

@@ -98,3 +98,22 @@ export interface TravelInfo {
   accommodations: Accommodation[];
   transportations: Transportation[];
 }
+
+export type ReminderType = 'document' | 'booking' | 'packing' | 'activity' | 'other';
+
+export interface Reminder {
+  id: string;
+  title: string;
+  description: string;
+  type: ReminderType;
+  date: string;
+  time: string;
+  isCompleted: boolean;
+  createdAt: string;
+}
+
+export interface ReminderList {
+  id: string;
+  tripId: string;
+  reminders: Reminder[];
+}
