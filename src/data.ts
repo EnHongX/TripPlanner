@@ -1,4 +1,36 @@
-import { TripPlan } from './types';
+import type { TripPlan, PackingItem, PackingCategory, PackingList } from './types';
+
+export const packingCategories: PackingCategory[] = [
+  { id: 'documents', name: '证件', icon: '📄' },
+  { id: 'clothes', name: '衣物', icon: '👕' },
+  { id: 'toiletries', name: '洗漱', icon: '🧴' },
+  { id: 'electronics', name: '电子设备', icon: '📱' }
+];
+
+export const mockPackingItems: PackingItem[] = [
+  { id: '1', name: '护照', category: 'documents', isPacked: true },
+  { id: '2', name: '身份证', category: 'documents', isPacked: false },
+  { id: '3', name: '机票', category: 'documents', isPacked: true },
+  { id: '4', name: '酒店预订确认单', category: 'documents', isPacked: false },
+  { id: '5', name: 'T恤 x5', category: 'clothes', isPacked: false },
+  { id: '6', name: '牛仔裤 x2', category: 'clothes', isPacked: true },
+  { id: '7', name: '内衣裤 x7', category: 'clothes', isPacked: true },
+  { id: '8', name: '外套', category: 'clothes', isPacked: false },
+  { id: '9', name: '牙刷牙膏', category: 'toiletries', isPacked: true },
+  { id: '10', name: '洗面奶', category: 'toiletries', isPacked: true },
+  { id: '11', name: '洗发水', category: 'toiletries', isPacked: false },
+  { id: '12', name: '防晒霜', category: 'toiletries', isPacked: false },
+  { id: '13', name: '手机', category: 'electronics', isPacked: true },
+  { id: '14', name: '充电器', category: 'electronics', isPacked: true },
+  { id: '15', name: '相机', category: 'electronics', isPacked: false },
+  { id: '16', name: '耳机', category: 'electronics', isPacked: true }
+];
+
+export const mockPackingList: PackingList = {
+  id: '1',
+  tripId: '1',
+  items: mockPackingItems
+};
 
 export const mockTripPlan: TripPlan = {
   id: '1',
